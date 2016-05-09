@@ -4,6 +4,8 @@ from django.shortcuts import render
 # import networkx as nx
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.template import RequestContext
+
 from . import forms
 
 
@@ -12,14 +14,14 @@ def upload_file(request):
         form = forms.UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             handle_excel(request.FILES['file'])
-            return HttpResponseRedirect('/success')
+            return render(request, 'success.html')
     else:
         form = forms.UploadFileForm()
-    return render_to_response('upload.html', {'form': form})
+    return render_to_response('upload.html', {'form': form}, context_instance=RequestContext(request))
 
 
 def handle_excel(request):
-    return render(request)
+    pass
 
 
 def upload_success(request):
