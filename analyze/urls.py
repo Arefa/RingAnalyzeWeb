@@ -20,4 +20,5 @@ from analyze import views
 urlpatterns = [
     url(r'^upload/', views.upload_file),
     url(r'^success/', views.upload_success),
+    url(r'^handleexcel/', views.handle_excel),
 ]
