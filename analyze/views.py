@@ -3,9 +3,7 @@ from __future__ import print_function
 from __future__ import print_function
 from __future__ import print_function
 from django.shortcuts import render
-from openpyxl import load_workbook, Workbook
-import networkx as nx
-from django.http import HttpResponseRedirect
+from openpyxl import load_workbook
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
@@ -25,15 +23,15 @@ def upload_file(request):
 
 def handle_excel(request):
     # 读取纤缆连接关系表
-    wb_fiber = load_workbook(filename='fiberrela.xlsx', read_only=True)
+    wb_fiber = load_workbook(filename='./static/fiberrela.xlsx', read_only=True)
     ws_fiber = wb_fiber.active
 
     # 读取网元信息表
-    wb_ne = load_workbook(filename='neinfo.xlsx', read_only=True)
+    wb_ne = load_workbook(filename='./static/neinfo.xlsx', read_only=True)
     ws_ne = wb_ne.active
 
     # 读取汇聚网元信息表
-    wb_converge = load_workbook(filename='convergeinfo.xlsx', read_only=True)
+    wb_converge = load_workbook(filename='./static/convergeinfo.xlsx', read_only=True)
     ws_converge = wb_converge.active
 
     # 定义将要添加进某一环图的路径列表
