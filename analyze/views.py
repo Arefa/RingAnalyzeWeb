@@ -27,6 +27,9 @@ def handle_excel(request):
     # 创建一个Workbook对象以便将结果写入
     wb_write = Workbook(write_only=True)
     ws_write = wb_write.create_sheet()
+    big_access_num_config = 8
+    long_single_chain_num_config = 1
+    big_converge_node_point_config = 80
     # 获取全地区环名集合
     ring_name_set = NetworkElement.objects.values_list('ring_name', flat=True).order_by('ring_name').distinct()
     # ---------------------------------------------------
@@ -39,7 +42,8 @@ def handle_excel(request):
     total_access_ne_num = NetworkElement.objects.count()
     # print (total_access_ne_num)
     total_ring_access_ne_num = []
-
+    # 所有单归网元表
+    total_single_ne_num = []
     # print(total_access_ne_num)
     # # 所有成环网元列表
     # total_ne_ring = []
@@ -86,10 +90,33 @@ def handle_excel(request):
                 source_ne = converge_ne_list[a]
                 target_ne = converge_ne_list[b]
                 # ws_write.append(list(source_ne)+list(target_ne))
+                for pth in nx.all_simple_paths(g, source=source_ne, target=target_ne):
+                    if (len(pth)-2) > big_access_num_config:
+                        ws_write.append(['超大接入环：'])
+                        ws_write.append([len(pth)-2])
+                        ws_write.append(pth)
                 path_list.append(list(set(reduce(lambda x, y: x+y,
                                                  list(nx.all_simple_paths(g, source=source_ne, target=target_ne))))))
         # 获取每一个环成环网元列表
         ring_ne_list = list(set(reduce(lambda x, y: x+y, path_list)))
+        # 获取每一个环未成环网元列表
+        no_ring_ne_list = list(set(ne_list)-set(ring_ne_list))
+        no_ring_ne_path = []
+
+        for nrnl in no_ring_ne_list:
+            for cnl in converge_ne_list:
+                if nx.all_simple_paths(g, source=nrnl, target=cnl):
+                    for nrnp in nx.all_simple_paths(g, source=nrnl, target=cnl):
+                        if len(nrnp) > long_single_chain_num_config and len(set(nrnp) & set(ring_ne_list)) == 1:
+                            ws_write.append(['汇聚长单链：'])
+                            ws_write.append([len(nrnp)])
+                            ws_write.append(nrnp)
+                    # 未成环网元单归路径表
+                    no_ring_ne_path.append(list(set(reduce(lambda x, y: x + y,
+                                                           list(nx.all_simple_paths(g, source=nrnl, target=cnl))))))
+        # 未成环网元单归网元表
+        no_ring_ne_path_list = list(set(reduce(lambda x, y: x + y, no_ring_ne_path)))
+        total_single_ne_num.append(len(no_ring_ne_path_list))
         # 接入网元成环列表
         ring_access_ne_list = []
         for c in range(0, len(ring_ne_list)):
@@ -101,8 +128,11 @@ def handle_excel(request):
         total_ring_access_ne_num.append(len(ring_access_ne_list))
     # print (sum(total_ring_access_ne_num))
     ring_rate = float(sum(total_ring_access_ne_num))/float(total_access_ne_num)
+    double_rate = 1-float(sum(total_single_ne_num))/float(total_access_ne_num)
     ws_write.append(['总成环率------------------------------'])
     ws_write.append(list(str(ring_rate)))
+    ws_write.append(['总双归率------------------------------'])
+    ws_write.append(list(str(double_rate)))
     # print (ring_rate)
     wb_write.save('6.xlsx')
     return render_to_response('success.html')
