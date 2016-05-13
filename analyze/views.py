@@ -64,6 +64,10 @@ def handle_excel(request):
     # wb_write.save('2.xlsx')
     # return render_to_response('success.html')
     # # ---------------------------------------------------
+        # 接入网元成环列表
+        ring_access_ne_list = []
+        # 未成环接入网元单归网元表
+        no_ring_access_ne_list = []
         # 获取源跟宿均在该环全部网元列表中的纤缆连接关系列表
         fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list)\
             .values_list('source', 'target')
@@ -111,14 +115,20 @@ def handle_excel(request):
                             ws_write.append(['汇聚长单链：'])
                             ws_write.append([len(nrnp)])
                             ws_write.append(nrnp)
-                    # 未成环网元单归路径表
-                    no_ring_ne_path.append(list(set(reduce(lambda x, y: x + y,
+                            # 未成环网元单归路径表
+                            no_ring_ne_path.append(list(set(reduce(lambda x, y: x + y,
                                                            list(nx.all_simple_paths(g, source=nrnl, target=cnl))))))
         # 未成环网元单归网元表
-        no_ring_ne_path_list = list(set(reduce(lambda x, y: x + y, no_ring_ne_path)))
-        total_single_ne_num.append(len(no_ring_ne_path_list))
-        # 接入网元成环列表
-        ring_access_ne_list = []
+        if no_ring_ne_path:
+            no_ring_ne_path_list = list(set(reduce(lambda x, y: x + y, no_ring_ne_path)))
+        while no_ring_ne_path:
+            no_ring_ne_path.pop()
+        for nrnpl in no_ring_ne_path_list:
+            if nrnpl not in converge_ne_list:
+                no_ring_access_ne_list.append(nrnpl)
+        print(no_ring_access_ne_list)
+        total_single_ne_num.append(len(no_ring_access_ne_list))
+
         for c in range(0, len(ring_ne_list)):
             if ring_ne_list[c] not in converge_ne_list:
                 ring_access_ne_list.append(ring_ne_list[c])
