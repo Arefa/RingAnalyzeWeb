@@ -86,7 +86,8 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ringanalyzedb',
+        # 'NAME': 'ringanalyzedb',
+        'NAME': 'ringdb',
         'USER': 'root',
         'PASSWORD': '123456',
         'HOST': 'localhost',
