@@ -435,23 +435,23 @@ def produce_ring_fiber(request):
 #       汇聚网元信息表为自有维护
 def import_xlsx_data(request):
     # 读取网元信息表
-    wb_neinfo = load_workbook(filename='./static/neinfo.xlsx', read_only=True)
+    wb_neinfo = load_workbook(filename='./static/1neinfo.xlsx', read_only=True)
     ws_neinfo = wb_neinfo.active
     # 读取汇聚网元信息表
     wb_cneinfo = load_workbook(filename='./static/cneinfo.xlsx', read_only=True)
     ws_cneinfo = wb_cneinfo.active
     # 读取纤缆连接关系表
-    wb_ne2ne = load_workbook(filename='./static/ne2ne.xlsx', read_only=True)
+    wb_ne2ne = load_workbook(filename='./static/1ne2ne.xlsx', read_only=True)
     ws_ne2ne = wb_ne2ne.active
     # --------------------------------------------------------------------------
     # 导入网元信息表中的普通网元到数据库
-    if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8, column=2).value == u'网元类型' and ws_neinfo.cell(row=8, column=12).value == u'所属子网':
+    if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8, column=2).value == u'网元类型' and ws_neinfo.cell(row=8, column=10).value == u'所属子网':
         # 定义接入网元类型
         access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
         for a_row in range(9, ws_neinfo.max_row + 1):
             ne_name = ws_neinfo.cell(row=a_row, column=1).value
             ne_type = ws_neinfo.cell(row=a_row, column=2).value
-            ne_ring = ws_neinfo.cell(row=a_row, column=12).value
+            ne_ring = ws_neinfo.cell(row=a_row, column=10).value
             ring_region = '宁波'
             if ne_type in access_ne_type:
                 print (u'正在导入第'+str(a_row)+u'条接入网元数据')
