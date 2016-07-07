@@ -8,7 +8,8 @@ import networkx as nx
 from networkx import NetworkXError
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from .models import NetworkElement, FiberRelationship, ConvergeNE, BAR, Result, ARR, ARP, LSC, DR, BCNE, ErrorMsg
+from .models import NetworkElement, FiberRelationship, ConvergeNE, BAR, Result, ARR, ARP, LSC, DR, BCNE, ErrorMsg, \
+    DetailResult
 from . import forms
 from functools import reduce
 
@@ -488,9 +489,9 @@ def main_handle(request):
     # 超大接入环接入网元阈值
     big_access_num_config = 12
     # 长单链网元阈值
-    long_single_chain_num_config = 3
+    long_single_chain_num_config = 4
     # 超大汇聚节点阈值
-    big_converge_node_point_config = 80
+    big_converge_node_point_config = 0
     # 以上为计算参数配置-----------------------------
 
     # 在汇聚网元表中筛选出所有环名称
@@ -548,27 +549,33 @@ def main_handle(request):
                             if len(set(pth) & set(converge_ne_list)) == 2:
                                 if len(pth) > 2:
                                     pth_str = '->'.join(pth)
-                                    ARP.objects.get_or_create(ring_name=rns, arp=pth_str)
+                                    DetailResult.objects.create(ring_name=rns, arp=pth_str)
+                                    # ARP.objects.get_or_create(ring_name=rns, arp=pth_str)
                                     # 判断超大接入环并写入数据库BAR数据表中
                                     if (len(pth) - 2) >= big_access_num_config:
-                                        BAR.objects.get_or_create(ring_name=rns, ne_num=len(pth)-2, bar_ne=pth_str)
+                                        DetailResult.objects.create(ring_name=rns, ne_num=len(pth)-2, bar_ne=pth_str)
+                                        # BAR.objects.get_or_create(ring_name=rns, ne_num=len(pth)-2, bar_ne=pth_str)
                                     # 将该路径中的网元加入到该环成环网元列表中，剔除首尾的汇聚网元
                                     for c in range(1, len(pth)-1):
                                         if pth[c] not in path_list:
                                             path_list.append(pth[c])
                 except NetworkXError as nxe:
                     print (nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
         # 获取每一个环成环网元列表
         ring_ne_list = path_list
         ring_str = '->'.join(ring_ne_list)
         # 将该环的成环率写入数据库ARR数据表中
         try:
-            ARR.objects.get_or_create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
+            DetailResult.objects.create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
                                       arr_ne=ring_str)
+            # ARR.objects.get_or_create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
+            #                          arr_ne=ring_str)
         except ZeroDivisionError:
-            print(nxe.message)
-            ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
+            print('ZeroDivisionError')
+            DetailResult.objects.get_or_create(ring_name=rns, msg='ZeroDivisionError')
+            # ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
             continue
         # 将该环成环网元的数量添加到总列表中
         total_ring_access_ne_num.append(len(ring_ne_list))
@@ -584,12 +591,25 @@ def main_handle(request):
                         for nrnp in nx.all_simple_paths(g, source=rnl, target=nrnl):
                             if len(set(nrnp) & set(ring_ne_list + converge_ne_list)) == 1 and len(nrnp) >= long_single_chain_num_config:
                                 nrnp_str = '->'.join(nrnp)
-                                LSC.objects.get_or_create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str)
+                                DetailResult.objects.create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str)
+                                # LSC.objects.get_or_create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp)
                 except NetworkXError as nxe:
                     print(nxe.message)
-                    ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    # ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
-
+        # 处理重复的长单链
+        # lsc_original=LSC.objects.filter(ring_name=rns).values_list('lsc_num', 'lsc_ne').order_by('-lsc_num')
+        # for i in range(0, len(lsc_original)-1):
+        #     for j in range(i+1, len(lsc_original)):
+        #         big = lsc_original[i]
+        #         lessbig = lsc_original[j]
+        #         if set(big[1]).issuperset(set(lessbig[1])):
+        #             if LSC.objects.filter(ring_name=rns).filter(lsc_num=lessbig[0]).filter(lsc_ne=lessbig[1]):
+        #                 LSC.objects.filter(ring_name=rns).filter(lsc_num=lessbig[0]).filter(lsc_ne=lessbig[1]).delete()
+        # lsc_new = LSC.objects.filter(ring_name=rns).values_list('lsc_num', 'lsc_ne').order_by('-lsc_num')
+        # for k in range(0, len(lsc_new)):
+        #     DetailResult.objects.create(ring_name=rns, lsc_num=lsc_new[k][0], lsc_ne=lsc_new[k][1])
         # --------------------计算双归率-------------------
         # 定义单归网元列表
         single_accsess_ne = []
@@ -605,10 +625,12 @@ def main_handle(request):
                                         single_accsess_ne.append(nrnp[c])
                 except NetworkXError as nxe:
                     print (nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
-        double_accsess_ne = list(set(single_accsess_ne)-set(converge_ne_list))
+        double_accsess_ne = list(set(access_ne_list)-(set(single_accsess_ne)-set(converge_ne_list)))
         # 将该环双归率写入数据库DR数据表中
-        DR.objects.get_or_create(ring_name=rns, dr=float(len(double_accsess_ne))/float(len(access_ne_list)))
+        DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne))/float(len(access_ne_list)))
+        # DR.objects.get_or_create(ring_name=rns, dr=float(len(double_accsess_ne))/float(len(access_ne_list)))
         total_double_ne_num.append(len(double_accsess_ne))
 
         # --------------------计算超大汇聚节点-------------------
@@ -628,11 +650,13 @@ def main_handle(request):
                                         single_single_ne.append(ph[p])
                 except NetworkXError as nxe:
                     print(nxe.message)
-                    ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    # ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
             point = len(single_single_ne) + float(len(double_accsess_ne))/float(len(converge_ne_list))
             if point >= big_converge_node_point_config:
-                BCNE.objects.get_or_create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
+                DetailResult.objects.create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
+                # BCNE.objects.get_or_create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
 
     ring_rate = float(sum(total_ring_access_ne_num))/float(sum(total_access_ne_num))
     double_rate = float(sum(total_double_ne_num))/float(sum(total_access_ne_num))

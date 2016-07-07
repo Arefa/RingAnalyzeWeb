@@ -33,6 +33,26 @@ class ConvergeNE(models.Model):
         return "%s, %s, %s, %s" % (self.cne_name, self.cne_type, self.ring_name, self.ring_region)
 
 
+class DetailResult(models.Model):
+    ring_name = models.CharField(max_length=100)
+    ne_num = models.CharField(max_length=100)
+    bar_ne = models.TextField(max_length=1000)
+    cne_point = models.CharField(max_length=100)
+    bcne_cne = models.CharField(max_length=100)
+    lsc_num = models.CharField(max_length=100)
+    lsc_ne = models.TextField(max_length=1000)
+    arr = models.CharField(max_length=100)
+    arr_ne = models.TextField(max_length=1000)
+    dr = models.CharField(max_length=100)
+    arp = models.TextField(max_length=1000)
+    msg = models.CharField(max_length=500)
+
+    def __str__(self):
+        return "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (
+            self.ring_name, self.ne_num, self.bar_ne, self.cne_point, self.bcne_cne, self.lsc_num, self.lsc_ne,
+            self.arr, self.arr_ne, self.dr, self.arp, self.msg)
+
+
 # big access ring
 class BAR(models.Model):
     ring_name = models.CharField(max_length=100)
