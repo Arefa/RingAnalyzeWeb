@@ -8,10 +8,15 @@ import networkx as nx
 from networkx import NetworkXError
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from .models import NetworkElement, FiberRelationship, ConvergeNE, BAR, Result, ARR, ARP, LSC, DR, BCNE, ErrorMsg, \
-    DetailResult
+# from .models import NetworkElement, FiberRelationship, ConvergeNE, BAR, Result, ARR, ARP, LSC, DR, BCNE, ErrorMsg, \
+#     DetailResult
+from .models import NetworkElement, FiberRelationship, ConvergeNE, Result, DetailResult
 from . import forms
 from functools import reduce
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 
 # 函数功能：上传Excel文件
@@ -63,39 +68,39 @@ def handle_excel(request):
         total_access_ne_num.append(len(access_ne_list))
         # 获取某环接入环全部网元列表
         ne_list = access_ne_list + converge_ne_list
-    #     # ---------------------------------------------------
-    #     ws_write.append(access_ne_list)
-    #     ws_write.append(converge_ne_list)
-    # wb_write.save('2.xlsx')
-    # return render_to_response('success.html')
-    # # ---------------------------------------------------
+        #     # ---------------------------------------------------
+        #     ws_write.append(access_ne_list)
+        #     ws_write.append(converge_ne_list)
+        # wb_write.save('2.xlsx')
+        # return render_to_response('success.html')
+        # # ---------------------------------------------------
         # 接入网元成环列表
         ring_access_ne_list = []
         # 未成环接入网元单归网元表
         no_ring_access_ne_list = []
         # 获取源跟宿均在该环全部网元列表中的纤缆连接关系列表
-        fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list)\
+        fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list) \
             .values_list('source', 'target')
-    #     # ---------------------------------------------------
-    #     for frl in fiber_relationship_list:
-    #         ws_write.append(list(frl))
-    # wb_write.save('3.xlsx')
-    # return render_to_response('success.html')
-    # # ---------------------------------------------------
+        #     # ---------------------------------------------------
+        #     for frl in fiber_relationship_list:
+        #         ws_write.append(list(frl))
+        # wb_write.save('3.xlsx')
+        # return render_to_response('success.html')
+        # # ---------------------------------------------------
         # 实例化一个空图
         g = nx.Graph()
         #
         path_list = []
-    #     path_set = []
-    #     not_path_set = []
-    #     single_path = []
-    #     single_re_path_set = []
+        #     path_set = []
+        #     not_path_set = []
+        #     single_path = []
+        #     single_re_path_set = []
         # 将路径列表加入到图中
         g.add_edges_from(fiber_relationship_list)
 
         # 找出接入环中任意两个汇聚网元之间的所有路径
-        for a in range(0, len(converge_ne_list)-1):
-            for b in range(a+1, len(converge_ne_list)):
+        for a in range(0, len(converge_ne_list) - 1):
+            for b in range(a + 1, len(converge_ne_list)):
                 source_ne = converge_ne_list[a]
                 target_ne = converge_ne_list[b]
                 # ws_write.append(list(source_ne)+list(target_ne))
@@ -110,16 +115,16 @@ def handle_excel(request):
                             for c in range(0, len(pth)):
                                 if pth[c] not in path_list:
                                     path_list.append(pth[c])
-                        # path_list.append(list(set(reduce(lambda x, y: x + y, list(paths)))))
+                                    # path_list.append(list(set(reduce(lambda x, y: x + y, list(paths)))))
                 except NetworkXError as nxe:
-                    print (nxe.message)
+                    print(nxe.message)
                     continue
 
         # 获取每一个环成环网元列表
         # ring_ne_list = list(set(reduce(lambda x, y: x+y, path_list)))
         ring_ne_list = path_list
         # 获取每一个环未成环网元列表
-        no_ring_ne_list = list(set(ne_list)-set(ring_ne_list))
+        no_ring_ne_list = list(set(ne_list) - set(ring_ne_list))
         no_ring_ne_path = []
 
         for nrnl in no_ring_ne_list:
@@ -131,11 +136,12 @@ def handle_excel(request):
                                 ws_write.append(['汇聚长单链：'])
                                 ws_write.append([len(nrnp)])
                                 ws_write.append(nrnp)
-                            # 未成环网元单归路径表
+                                # 未成环网元单归路径表
                                 no_ring_ne_path.append(list(set(reduce(lambda x, y: x + y,
-                                                           list(nx.all_simple_paths(g, source=nrnl, target=cnl))))))
+                                                                       list(nx.all_simple_paths(g, source=nrnl,
+                                                                                                target=cnl))))))
                 except NetworkXError as nxe:
-                    print (nxe.message)
+                    print(nxe.message)
                     continue
         # 未成环网元单归网元表
         if no_ring_ne_path:
@@ -166,22 +172,22 @@ def handle_excel(request):
         ws_write.append(ring_access_ne_list)
 
         ws_write.append(['--成环率--'])
-        single_ring_rate = float(len(ring_access_ne_list))/float(len(access_ne_list))
+        single_ring_rate = float(len(ring_access_ne_list)) / float(len(access_ne_list))
         ws_write.append(list(str(single_ring_rate)))
         ws_write.append(['--双归率--'])
-        single_double_rate = 1-float(len(no_ring_access_ne_list))/float(len(access_ne_list))
+        single_double_rate = 1 - float(len(no_ring_access_ne_list)) / float(len(access_ne_list))
         ws_write.append(list(str(single_double_rate)))
 
         # print(len(ring_access_ne_list))
         total_ring_access_ne_num.append(len(ring_access_ne_list))
-    print (sum(total_ring_access_ne_num))
-    ring_rate = float(sum(total_ring_access_ne_num))/float(sum(total_access_ne_num))
-    double_rate = 1-float(sum(total_single_ne_num))/float(sum(total_access_ne_num))
+    print(sum(total_ring_access_ne_num))
+    ring_rate = float(sum(total_ring_access_ne_num)) / float(sum(total_access_ne_num))
+    double_rate = 1 - float(sum(total_single_ne_num)) / float(sum(total_access_ne_num))
     ws_write.append(['总成环率------------------------------'])
     ws_write.append(list(str(ring_rate)))
     ws_write.append(['总双归率------------------------------'])
     ws_write.append(list(str(double_rate)))
-    print (ring_rate)
+    print(ring_rate)
     wb_write.save('6.xlsx')
     return render_to_response('success.html')
     #     # ---------------------------------------------------
@@ -347,6 +353,7 @@ def handle_excel(request):
 def upload_success(request):
     pass
 
+
 # # 读取纤缆连接关系表
 # wb_fiber = load_workbook(filename='testbeilun.xlsx', read_only=True)
 # ws_fiber = wb_fiber.active
@@ -436,13 +443,13 @@ def produce_ring_fiber(request):
 #       汇聚网元信息表为自有维护
 def import_xlsx_data(request):
     # 读取网元信息表
-    wb_neinfo = load_workbook(filename='./static/1neinfo.xlsx', read_only=True)
+    wb_neinfo = load_workbook(filename='./static/neinfo.xlsx', read_only=True)
     ws_neinfo = wb_neinfo.active
     # 读取汇聚网元信息表
     wb_cneinfo = load_workbook(filename='./static/cneinfo.xlsx', read_only=True)
     ws_cneinfo = wb_cneinfo.active
     # 读取纤缆连接关系表
-    wb_ne2ne = load_workbook(filename='./static/1ne2ne.xlsx', read_only=True)
+    wb_ne2ne = load_workbook(filename='./static/ne2ne.xlsx', read_only=True)
     ws_ne2ne = wb_ne2ne.active
     # --------------------------------------------------------------------------
     # 导入网元信息表中的普通网元到数据库
@@ -453,21 +460,23 @@ def import_xlsx_data(request):
             ne_name = ws_neinfo.cell(row=a_row, column=1).value
             ne_type = ws_neinfo.cell(row=a_row, column=2).value
             ne_ring = ws_neinfo.cell(row=a_row, column=10).value
-            ring_region = '宁波'
+            region_list = ws_neinfo.cell(row=a_row, column=10).value
+            ring_region = region_list[0:2]
             if ne_type in access_ne_type:
                 print (u'正在导入第'+str(a_row)+u'条接入网元数据')
                 NetworkElement.objects.create(ne_name=ne_name, ne_type=ne_type, ring_name=ne_ring, ring_region=ring_region)
     else:
         print(u'网元信息表读取有误！')
     # 导入汇聚网元信息表到数据库
-    if ws_cneinfo.cell(row=1, column=1).value == u'网元名称' and ws_cneinfo.cell(row=1, column=2).value == u'所属子网':
-        for b_row in range(2, ws_cneinfo.max_row+1):
-            cne_name = ws_cneinfo.cell(row=b_row, column=1).value
-            cne_type = 'OptiX PTN 3900'
-            ring_name = ws_cneinfo.cell(row=b_row, column=2).value
-            ring_region = '宁波'
+    if ws_cneinfo.cell(row=1, column=2).value == u'网元名称' and ws_cneinfo.cell(row=1, column=3).value == u'所属子网':
+        for b_row in range(2, ws_cneinfo.max_row + 1):
+            cne_name = ws_cneinfo.cell(row=b_row, column=2).value
+            cne_type = 'OptiX PTN 390000'
+            ring_name = ws_cneinfo.cell(row=b_row, column=3).value
+            ring_region = ws_cneinfo.cell(row=b_row, column=1).value
             print(u'正在导入第' + str(b_row) + u'条汇聚网元数据')
-            ConvergeNE.objects.create(cne_name=cne_name, cne_type=cne_type, ring_name=ring_name, ring_region=ring_region)
+            ConvergeNE.objects.create(cne_name=cne_name, cne_type=cne_type, ring_name=ring_name,
+                                      ring_region=ring_region)
     else:
         print(u'汇聚网元信息表读取有误！')
     # 导入纤缆连接关系表到数据库
@@ -477,7 +486,13 @@ def import_xlsx_data(request):
             target = ws_ne2ne.cell(row=c_row, column=8).value
             weight = ws_ne2ne.cell(row=c_row, column=17).value
             print(u'正在导入第' + str(c_row) + u'条纤缆连接关系数据')
-            FiberRelationship.objects.create(source=source, target=target, edge_weight=weight)
+            if weight == '1':
+                weight_new = 1
+                FiberRelationship.objects.create(source=source, target=target, edge_weight=weight_new)
+            elif weight != '1':
+                weight_new = 1000
+                FiberRelationship.objects.create(source=source, target=target, edge_weight=weight_new)
+
     else:
         print(u'纤缆连接关系表读取有误！')
     # --------------------------------------------------------------------------
@@ -661,4 +676,56 @@ def main_handle(request):
     ring_rate = float(sum(total_ring_access_ne_num))/float(sum(total_access_ne_num))
     double_rate = float(sum(total_double_ne_num))/float(sum(total_access_ne_num))
     Result.objects.get_or_create(total_arr=ring_rate, total_dr=double_rate)
+
+    # [(id, u''),(id, u''),....]
+    arplist = DetailResult.objects.values_list('id', 'arp')
+    for al in arplist:
+        weightlist = []
+        allist = str(al[1]).split('->')
+        for x in range(0, len(allist) - 1):
+            if FiberRelationship.objects.filter(source=allist[x]).filter(target=allist[x + 1]):
+                v = FiberRelationship.objects.filter(source=allist[x]).filter(target=allist[x + 1]).values_list(
+                    'edge_weight', flat=True)
+                weightlist.append(v)
+            elif FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]):
+                v = FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]).values_list(
+                    'edge_weight', flat=True)
+                weightlist.append(v)
+        print(weightlist)
+
+    # list = []
+    # teststr = "51-11-象山昌国->51-180-TXS昌国基站->51-92-中国渔村->53-99-XS阳光雅苑B区SF->53-221-XS阳光雅苑->51-67-杉树岙->52-135-TXS东门岛->51-66-东门->52-95-宁波市象山县石浦镇XWJBD->51-65-小网巾->52-71-TXS鹤翔->52-104-TXS后塘角->51-12-象山后塘角"
+    # testlist = str(teststr).split('->')
+    # for test in range(0,len(testlist)-1):
+    #     if FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]):
+    #         v = FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]).values_list('edge_weight', flat=True)
+    #         list.append(v)
+    #     elif FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]):
+    #         v = FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]).values_list('edge_weight', flat=True)
+    #         list.append(v)
+    # print(list)
+
+        if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
+            if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
+                for wln in range(1, len(weightlist)):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
+                        for wlnl in range(wln+1, len(weightlist)):
+                            if str(weightlist[wlnl]) == str(weightlist[0]) and DetailResult.objects.filter(id=al[0]):
+                                DetailResult.objects.filter(id=al[0]).delete()
+            elif str(weightlist[0]) == "[u'1']" and DetailResult.objects.filter(id=al[0]):
+                for wln in range(1, len(weightlist)):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
+                        for wln1 in range(wln+1, len(weightlist)):
+                            if str(weightlist[wln1]) != str(weightlist[wln]) and wln1 < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
+                                for wln2 in range(wln1+1, len(weightlist)):
+                                    if str(weightlist[wln2]) != str(weightlist[wln1]) and DetailResult.objects.filter(id=al[0]):
+                                        DetailResult.objects.filter(id=al[0]).delete()
+
+
+
+
+    # print(weightlist)
+    # print (weightlist)
+    # if len(weightlist)==0:
+    #     print (weightlist)
     return render_to_response('success.html')
