@@ -53,6 +53,45 @@ class DetailResult(models.Model):
             self.arr, self.arr_ne, self.dr, self.arp, self.msg)
 
 
+class RingTable(models.Model):
+    region = models.CharField(max_length=100)
+    ring_name = models.CharField(max_length=100)
+    arp = models.CharField(max_length=1000)
+    arp_nbr = models.CharField(max_length=100)
+    is_big_ring = models.CharField(max_length=10)
+
+    def __str__(self):
+        return "%s, %s, %s, %s, %s" % (self.region, self.ring_name, self.arp, self.arp_nbr, self.is_big_ring)
+
+
+class CneTable(models.Model):
+    region = models.CharField(max_length=100)
+    cne_name = models.CharField(max_length=100)
+    cne_nenbr = models.CharField(max_length=100)
+    is_big_cne = models.CharField(max_length=10)
+
+    def __str__(self):
+        return "%s, %s, %s, %s" % (self.region, self.cne_name, self.cne_nenbr, self.is_big_cne)
+
+
+class NeTable(models.Model):
+    region = models.CharField(max_length=100)
+    ne_name = models.CharField(max_length=100)
+    is_ring = models.CharField(max_length=10)
+    is_double_arrive = models.CharField(max_length=10)
+
+    def __str__(self):
+        return "%s, %s, %s, %s" % (self.region, self.ne_name, self.is_ring, self.is_double_arrive)
+
+
+class LongSingleTable(models.Model):
+    region = models.CharField(max_length=100)
+    longsinglepath = models.CharField(max_length=1000)
+    nbr = models.CharField(max_length=100)
+
+    def __str__(self):
+        return "%s, %s, %s" % (self.region, self.longsinglepath, self.nbr)
+
 # # big access ring
 # class BAR(models.Model):
 #     ring_name = models.CharField(max_length=100)
@@ -118,6 +157,7 @@ class Result(models.Model):
 
     def __str__(self):
         return "%s, %s" % (self.total_arr, self.total_dr)
+
 #
 #
 # class ErrorMsg(models.Model):
