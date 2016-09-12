@@ -452,33 +452,33 @@ def import_xlsx_data(request):
     wb_ne2ne = load_workbook(filename='./static/ne2ne.xlsx', read_only=True)
     ws_ne2ne = wb_ne2ne.active
     # --------------------------------------------------------------------------
-    # 导入网元信息表中的普通网元到数据库
-    if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8, column=2).value == u'网元类型' and ws_neinfo.cell(row=8, column=10).value == u'所属子网':
-        # 定义接入网元类型
-        access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
-        for a_row in range(9, ws_neinfo.max_row + 1):
-            ne_name = ws_neinfo.cell(row=a_row, column=1).value
-            ne_type = ws_neinfo.cell(row=a_row, column=2).value
-            ne_ring = ws_neinfo.cell(row=a_row, column=10).value
-            region_list = ws_neinfo.cell(row=a_row, column=10).value
-            ring_region = region_list[0:2]
-            if ne_type in access_ne_type:
-                print (u'正在导入第'+str(a_row)+u'条接入网元数据')
-                NetworkElement.objects.create(ne_name=ne_name, ne_type=ne_type, ring_name=ne_ring, ring_region=ring_region)
-    else:
-        print(u'网元信息表读取有误！')
-    # 导入汇聚网元信息表到数据库
-    if ws_cneinfo.cell(row=1, column=2).value == u'网元名称' and ws_cneinfo.cell(row=1, column=3).value == u'所属子网':
-        for b_row in range(2, ws_cneinfo.max_row + 1):
-            cne_name = ws_cneinfo.cell(row=b_row, column=2).value
-            cne_type = 'OptiX PTN 390000'
-            ring_name = ws_cneinfo.cell(row=b_row, column=3).value
-            ring_region = ws_cneinfo.cell(row=b_row, column=1).value
-            print(u'正在导入第' + str(b_row) + u'条汇聚网元数据')
-            ConvergeNE.objects.create(cne_name=cne_name, cne_type=cne_type, ring_name=ring_name,
-                                      ring_region=ring_region)
-    else:
-        print(u'汇聚网元信息表读取有误！')
+    # # 导入网元信息表中的普通网元到数据库
+    # if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8, column=2).value == u'网元类型' and ws_neinfo.cell(row=8, column=10).value == u'所属子网':
+    #     # 定义接入网元类型
+    #     access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
+    #     for a_row in range(9, ws_neinfo.max_row + 1):
+    #         ne_name = ws_neinfo.cell(row=a_row, column=1).value
+    #         ne_type = ws_neinfo.cell(row=a_row, column=2).value
+    #         ne_ring = ws_neinfo.cell(row=a_row, column=10).value
+    #         region_list = ws_neinfo.cell(row=a_row, column=10).value
+    #         ring_region = region_list[0:2]
+    #         if ne_type in access_ne_type:
+    #             print (u'正在导入第'+str(a_row)+u'条接入网元数据')
+    #             NetworkElement.objects.create(ne_name=ne_name, ne_type=ne_type, ring_name=ne_ring, ring_region=ring_region)
+    # else:
+    #     print(u'网元信息表读取有误！')
+    # # 导入汇聚网元信息表到数据库
+    # if ws_cneinfo.cell(row=1, column=2).value == u'网元名称' and ws_cneinfo.cell(row=1, column=3).value == u'所属子网':
+    #     for b_row in range(2, ws_cneinfo.max_row + 1):
+    #         cne_name = ws_cneinfo.cell(row=b_row, column=2).value
+    #         cne_type = 'OptiX PTN 390000'
+    #         ring_name = ws_cneinfo.cell(row=b_row, column=3).value
+    #         ring_region = ws_cneinfo.cell(row=b_row, column=1).value
+    #         print(u'正在导入第' + str(b_row) + u'条汇聚网元数据')
+    #         ConvergeNE.objects.create(cne_name=cne_name, cne_type=cne_type, ring_name=ring_name,
+    #                                   ring_region=ring_region)
+    # else:
+    #     print(u'汇聚网元信息表读取有误！')
     # 导入纤缆连接关系表到数据库
     if ws_ne2ne.cell(row=8, column=6).value == u'源网元' and ws_ne2ne.cell(row=8, column=8).value == u'宿网元' and ws_ne2ne.cell(row=8, column=17).value == u'备注':
         for c_row in range(9, ws_ne2ne.max_row + 1):
@@ -489,7 +489,7 @@ def import_xlsx_data(request):
             if weight == '1':
                 weight_new = 1
                 FiberRelationship.objects.create(source=source, target=target, edge_weight=weight_new)
-            elif weight != '1':
+            elif weight != '1' and weight != '0':
                 weight_new = 1000
                 FiberRelationship.objects.create(source=source, target=target, edge_weight=weight_new)
 
