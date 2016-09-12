@@ -85,19 +85,18 @@ DATABASES = {
     #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     # }
     'default': {
-        # 'ENGINE': 'django.db.backends.mysql',
-        # # 'NAME': 'ringanalyzedb',
-        # 'NAME': 'ringdb719',
-        # 'USER': 'root',
-        # 'PASSWORD': '123456',
-        # 'HOST': 'localhost',
-        # 'PORT': '3306',
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'nbnet',
-        'USER': 'postgres',
+        'USER': 'root',
         'PASSWORD': 'cqu000000',
         'HOST': '123.206.207.71',
-        'PORT': '5432',
+        'PORT': '3306',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': 'nbnet',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'cqu000000',
+        # 'HOST': '123.206.207.71',
+        # 'PORT': '5432',
     }
 }
 
