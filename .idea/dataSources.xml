@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="DataSourceManagerImpl" format="xml" hash="3587531203">
+  <component name="DataSourceManagerImpl" format="xml" hash="3225098436">
     <data-source source="LOCAL" name="Sqlite (Xerial) - db.sqlite3" uuid="376e5e9c-7963-4084-bf3b-e57962b91b5c">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
@@ -12,6 +12,20 @@
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://123.206.207.71:5432/nbnet</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="MySQL - nbnet@123.206.207.71" uuid="75784cd4-32a7-49be-82b6-fb3e087531b2">
+      <driver-ref>mysql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://123.206.207.71:3306/nbnet</jdbc-url>
+      <driver-properties>
+        <property name="autoReconnect" value="true" />
+        <property name="zeroDateTimeBehavior" value="convertToNull" />
+        <property name="tinyInt1isBit" value="false" />
+        <property name="characterEncoding" value="utf8" />
+        <property name="characterSetResults" value="utf8" />
+        <property name="yearIsDateType" value="false" />
+      </driver-properties>
     </data-source>
   </component>
 </project>

@@ -453,7 +453,9 @@ def import_xlsx_data(request):
     ws_ne2ne = wb_ne2ne.active
     # --------------------------------------------------------------------------
     # 导入网元信息表中的普通网元到数据库
-    if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8, column=2).value == u'网元类型' and ws_neinfo.cell(row=8, column=10).value == u'所属子网':
+    if ws_neinfo.cell(row=8, column=1).value == u'网元名称' and ws_neinfo.cell(row=8,
+                                                                           column=2).value == u'网元类型' and ws_neinfo.cell(
+            row=8, column=10).value == u'所属子网':
         # 定义接入网元类型
         access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
         for a_row in range(9, ws_neinfo.max_row + 1):
@@ -463,8 +465,9 @@ def import_xlsx_data(request):
             region_list = ws_neinfo.cell(row=a_row, column=10).value
             ring_region = region_list[0:2]
             if ne_type in access_ne_type:
-                print (u'正在导入第'+str(a_row)+u'条接入网元数据')
-                NetworkElement.objects.create(ne_name=ne_name, ne_type=ne_type, ring_name=ne_ring, ring_region=ring_region)
+                print(u'正在导入第' + str(a_row) + u'条接入网元数据')
+                NetworkElement.objects.create(ne_name=ne_name, ne_type=ne_type, ring_name=ne_ring,
+                                              ring_region=ring_region)
     else:
         print(u'网元信息表读取有误！')
     # 导入汇聚网元信息表到数据库
@@ -480,7 +483,9 @@ def import_xlsx_data(request):
     else:
         print(u'汇聚网元信息表读取有误！')
     # 导入纤缆连接关系表到数据库
-    if ws_ne2ne.cell(row=8, column=6).value == u'源网元' and ws_ne2ne.cell(row=8, column=8).value == u'宿网元' and ws_ne2ne.cell(row=8, column=17).value == u'备注':
+    if ws_ne2ne.cell(row=8, column=6).value == u'源网元' and ws_ne2ne.cell(row=8,
+                                                                        column=8).value == u'宿网元' and ws_ne2ne.cell(
+            row=8, column=17).value == u'备注':
         for c_row in range(9, ws_ne2ne.max_row + 1):
             source = ws_ne2ne.cell(row=c_row, column=6).value
             target = ws_ne2ne.cell(row=c_row, column=8).value
@@ -534,7 +539,7 @@ def main_handle(request):
         # # 未成环接入网元单归网元表
         # no_ring_access_ne_list = []
         # 获取源跟宿均在该环全部网元列表中的纤缆连接关系列表
-        fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list)\
+        fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list) \
             .values_list('source', 'target')
         # 实例化一个空图
         g = nx.Graph()
@@ -547,8 +552,8 @@ def main_handle(request):
         ring_cne = []
         # --------------------计算成环率和超大接入环-------------------
         # 找出接入环中任意两个汇聚网元之间的所有路径
-        for a in range(0, len(converge_ne_list)-1):
-            for b in range(a+1, len(converge_ne_list)):
+        for a in range(0, len(converge_ne_list) - 1):
+            for b in range(a + 1, len(converge_ne_list)):
                 source_ne = converge_ne_list[a]
                 target_ne = converge_ne_list[b]
                 try:
@@ -568,14 +573,14 @@ def main_handle(request):
                                     # ARP.objects.get_or_create(ring_name=rns, arp=pth_str)
                                     # 判断超大接入环并写入数据库BAR数据表中
                                     if (len(pth) - 2) >= big_access_num_config:
-                                        DetailResult.objects.create(ring_name=rns, ne_num=len(pth)-2, bar_ne=pth_str)
+                                        DetailResult.objects.create(ring_name=rns, ne_num=len(pth) - 2, bar_ne=pth_str)
                                         # BAR.objects.get_or_create(ring_name=rns, ne_num=len(pth)-2, bar_ne=pth_str)
                                     # 将该路径中的网元加入到该环成环网元列表中，剔除首尾的汇聚网元
-                                    for c in range(1, len(pth)-1):
+                                    for c in range(1, len(pth) - 1):
                                         if pth[c] not in path_list:
                                             path_list.append(pth[c])
                 except NetworkXError as nxe:
-                    print (nxe.message)
+                    print(nxe.message)
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
         # 获取每一个环成环网元列表
@@ -584,7 +589,7 @@ def main_handle(request):
         # 将该环的成环率写入数据库ARR数据表中
         try:
             DetailResult.objects.create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
-                                      arr_ne=ring_str)
+                                        arr_ne=ring_str)
             # ARR.objects.get_or_create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
             #                          arr_ne=ring_str)
         except ZeroDivisionError:
@@ -595,7 +600,7 @@ def main_handle(request):
         # 将该环成环网元的数量添加到总列表中
         total_ring_access_ne_num.append(len(ring_ne_list))
         # 获取每一个环未成环网元列表
-        no_ring_ne_list = list(set(access_ne_list)-set(ring_ne_list))
+        no_ring_ne_list = list(set(access_ne_list) - set(ring_ne_list))
 
         # --------------------计算长单链-------------------
         # 计算长单链
@@ -604,7 +609,8 @@ def main_handle(request):
                 try:
                     if nx.all_simple_paths(g, source=rnl, target=nrnl):
                         for nrnp in nx.all_simple_paths(g, source=rnl, target=nrnl):
-                            if len(set(nrnp) & set(ring_ne_list + converge_ne_list)) == 1 and len(nrnp) >= long_single_chain_num_config:
+                            if len(set(nrnp) & set(ring_ne_list + converge_ne_list)) == 1 and len(
+                                    nrnp) >= long_single_chain_num_config:
                                 nrnp_str = '->'.join(nrnp)
                                 DetailResult.objects.create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str)
                                 # LSC.objects.get_or_create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp)
@@ -634,17 +640,17 @@ def main_handle(request):
                 try:
                     if nx.all_simple_paths(g, source=cnl, target=nrnl):
                         for nrnp in nx.all_simple_paths(g, source=cnl, target=nrnl):
-                            if len(set(nrnp) & set(ring_ne_list+converge_ne_list)) == 1:
+                            if len(set(nrnp) & set(ring_ne_list + converge_ne_list)) == 1:
                                 for c in range(0, len(nrnp)):
                                     if nrnp[c] not in single_accsess_ne:
                                         single_accsess_ne.append(nrnp[c])
                 except NetworkXError as nxe:
-                    print (nxe.message)
+                    print(nxe.message)
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
-        double_accsess_ne = list(set(access_ne_list)-(set(single_accsess_ne)-set(converge_ne_list)))
+        double_accsess_ne = list(set(access_ne_list) - (set(single_accsess_ne) - set(converge_ne_list)))
         # 将该环双归率写入数据库DR数据表中
-        DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne))/float(len(access_ne_list)))
+        DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne)) / float(len(access_ne_list)))
         # DR.objects.get_or_create(ring_name=rns, dr=float(len(double_accsess_ne))/float(len(access_ne_list)))
         total_double_ne_num.append(len(double_accsess_ne))
 
@@ -668,13 +674,13 @@ def main_handle(request):
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     # ErrorMsg.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
-            point = len(single_single_ne) + float(len(double_accsess_ne))/float(len(converge_ne_list))
+            point = len(single_single_ne) + float(len(double_accsess_ne)) / float(len(converge_ne_list))
             if point >= big_converge_node_point_config:
                 DetailResult.objects.create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
                 # BCNE.objects.get_or_create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
 
-    ring_rate = float(sum(total_ring_access_ne_num))/float(sum(total_access_ne_num))
-    double_rate = float(sum(total_double_ne_num))/float(sum(total_access_ne_num))
+    ring_rate = float(sum(total_ring_access_ne_num)) / float(sum(total_access_ne_num))
+    double_rate = float(sum(total_double_ne_num)) / float(sum(total_access_ne_num))
     Result.objects.get_or_create(total_arr=ring_rate, total_dr=double_rate)
 
     # [(id, u''),(id, u''),....]
@@ -693,39 +699,256 @@ def main_handle(request):
                 weightlist.append(v)
         print(weightlist)
 
-    # list = []
-    # teststr = "51-11-象山昌国->51-180-TXS昌国基站->51-92-中国渔村->53-99-XS阳光雅苑B区SF->53-221-XS阳光雅苑->51-67-杉树岙->52-135-TXS东门岛->51-66-东门->52-95-宁波市象山县石浦镇XWJBD->51-65-小网巾->52-71-TXS鹤翔->52-104-TXS后塘角->51-12-象山后塘角"
-    # testlist = str(teststr).split('->')
-    # for test in range(0,len(testlist)-1):
-    #     if FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]):
-    #         v = FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]).values_list('edge_weight', flat=True)
-    #         list.append(v)
-    #     elif FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]):
-    #         v = FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]).values_list('edge_weight', flat=True)
-    #         list.append(v)
-    # print(list)
+        # list = []
+        # teststr = "51-11-象山昌国->51-180-TXS昌国基站->51-92-中国渔村->53-99-XS阳光雅苑B区SF->53-221-XS阳光雅苑->51-67-杉树岙->52-135-TXS东门岛->51-66-东门->52-95-宁波市象山县石浦镇XWJBD->51-65-小网巾->52-71-TXS鹤翔->52-104-TXS后塘角->51-12-象山后塘角"
+        # testlist = str(teststr).split('->')
+        # for test in range(0,len(testlist)-1):
+        #     if FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]):
+        #         v = FiberRelationship.objects.filter(source=testlist[test]).filter(target=testlist[test + 1]).values_list('edge_weight', flat=True)
+        #         list.append(v)
+        #     elif FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]):
+        #         v = FiberRelationship.objects.filter(source=testlist[test + 1]).filter(target=testlist[test]).values_list('edge_weight', flat=True)
+        #         list.append(v)
+        # print(list)
 
         if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
             if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
                 for wln in range(1, len(weightlist)):
-                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
-                        for wlnl in range(wln+1, len(weightlist)):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
+                            weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                        for wlnl in range(wln + 1, len(weightlist)):
                             if str(weightlist[wlnl]) == str(weightlist[0]) and DetailResult.objects.filter(id=al[0]):
                                 DetailResult.objects.filter(id=al[0]).delete()
             elif str(weightlist[0]) == "[u'1']" and DetailResult.objects.filter(id=al[0]):
                 for wln in range(1, len(weightlist)):
-                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
-                        for wln1 in range(wln+1, len(weightlist)):
-                            if str(weightlist[wln1]) != str(weightlist[wln]) and wln1 < len(weightlist)-1 and DetailResult.objects.filter(id=al[0]):
-                                for wln2 in range(wln1+1, len(weightlist)):
-                                    if str(weightlist[wln2]) != str(weightlist[wln1]) and DetailResult.objects.filter(id=al[0]):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
+                            weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                        for wln1 in range(wln + 1, len(weightlist)):
+                            if str(weightlist[wln1]) != str(weightlist[wln]) and wln1 < len(
+                                    weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                                for wln2 in range(wln1 + 1, len(weightlist)):
+                                    if str(weightlist[wln2]) != str(weightlist[wln1]) and DetailResult.objects.filter(
+                                            id=al[0]):
                                         DetailResult.objects.filter(id=al[0]).delete()
-
-
-
 
     # print(weightlist)
     # print (weightlist)
     # if len(weightlist)==0:
     #     print (weightlist)
+    return render_to_response('success.html')
+
+
+def another_main(request):
+    # 以下为计算参数配置-----------------------------
+    # 超大接入环接入网元阈值
+    big_access_num_config = 12
+    # 长单链网元阈值
+    long_single_chain_num_config = 4
+    # 超大汇聚节点阈值
+    big_converge_node_point_config = 0
+    # 以上为计算参数配置-----------------------------
+
+    # 在汇聚网元表中筛选出所有环名称
+    ring_name_set = ConvergeNE.objects.values_list('ring_name', flat=True).order_by('ring_name').distinct()
+    # 所有接入环接入网元数
+    total_access_ne_num = []
+    # 所有接入环成环接入网元数
+    total_ring_access_ne_num = []
+    # # 所有单归网元表
+    # total_single_ne_num = []
+    # 所有双归网元表
+    total_double_ne_num = []
+    # 遍历ring_name_set，到NetworkElement和ConvergeNE两张表中搜索ring_name_set[]得到某一环下所有网元
+    for rns in ring_name_set:
+        # 获取某环接入环接入网元列表
+        access_ne_list = list(NetworkElement.objects.filter(ring_name=rns).values_list('ne_name', flat=True))
+        # 获取某环接入环汇聚网元列表
+        converge_ne_list = list(ConvergeNE.objects.filter(ring_name=rns).values_list('cne_name', flat=True))
+        # 将该环接入网元数量添加至总数量列表
+        total_access_ne_num.append(len(access_ne_list))
+        # 获取某环接入环全部网元列表
+        ne_list = access_ne_list + converge_ne_list
+        # # 接入网元成环列表
+        # ring_access_ne_list = []
+        # # # 未成环接入网元单归网元表
+        # # no_ring_access_ne_list = []
+        # 获取源跟宿均在该环全部网元列表中的纤缆连接关系列表
+        fiber_relationship_list = FiberRelationship.objects.filter(source__in=ne_list).filter(target__in=ne_list) \
+            .values_list('source', 'target')
+        # 实例化一个空图
+        g = nx.Graph()
+        # 定义用来存放成环网元的列表
+        path_list = []
+        # 将路径列表加入到图中
+        g.add_edges_from(fiber_relationship_list)
+        # 成环汇聚网元
+        ring_cne = []
+        # --------------------计算成环率和超大接入环-------------------
+        # 找出接入环中任意两个汇聚网元之间的所有路径
+        for a in range(0, len(converge_ne_list) - 1):
+            for b in range(a + 1, len(converge_ne_list)):
+                source_ne = converge_ne_list[a]
+                target_ne = converge_ne_list[b]
+                try:
+                    # 判断路径非空
+                    if nx.all_simple_paths(g, source=source_ne, target=target_ne):
+                        if source_ne not in ring_cne:
+                            ring_cne.append(source_ne)
+                        elif target_ne not in ring_cne:
+                            ring_cne.append(target_ne)
+                        paths = nx.all_simple_paths(g, source=source_ne, target=target_ne)
+                        for pth in paths:
+                            # 去除路径中包含汇聚的情况
+                            if len(set(pth) & set(converge_ne_list)) == 2:
+                                if len(pth) > 2:
+                                    pth_str = '，'.join(pth)
+                                    DetailResult.objects.create(ring_name=rns, arp=pth_str)
+                                    # 判断超大接入环并写入数据库BAR数据表中
+                                    if (len(pth) - 2) >= big_access_num_config:
+                                        DetailResult.objects.create(ring_name=rns, ne_num=len(pth) - 2, bar_ne=pth_str)
+                                    # 将该路径中的网元加入到该环成环网元列表中，剔除首尾的汇聚网元
+                                    for c in range(1, len(pth) - 1):
+                                        if pth[c] not in path_list:
+                                            path_list.append(pth[c])
+                except NetworkXError as nxe:
+                    print(nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    continue
+        # 获取每一个环成环网元列表
+        ring_ne_list = path_list
+        ring_str = '，'.join(ring_ne_list)
+        # 将该环的成环率写入数据库ARR数据表中
+        try:
+            DetailResult.objects.create(ring_name=rns, arr=float(len(ring_ne_list)) / float(len(access_ne_list)),
+                                        arr_ne=ring_str)
+        except ZeroDivisionError:
+            print('ZeroDivisionError')
+            DetailResult.objects.get_or_create(ring_name=rns, msg='ZeroDivisionError')
+            continue
+        # 将该环成环网元的数量添加到总列表中
+        total_ring_access_ne_num.append(len(ring_ne_list))
+        # 获取每一个环未成环网元列表
+        no_ring_ne_list = list(set(access_ne_list) - set(ring_ne_list))
+
+        # --------------------计算长单链-------------------
+        # 成环接入汇聚网元列表
+        new_ring = ring_cne + ring_ne_list
+        # 计算长单链
+        for rnl in new_ring:
+            for nrnl in no_ring_ne_list:
+                try:
+                    if nx.all_simple_paths(g, source=rnl, target=nrnl):
+                        for nrnp in nx.all_simple_paths(g, source=rnl, target=nrnl):
+                            if len(set(nrnp) & set(new_ring)) == 1 and len(
+                                    nrnp) >= long_single_chain_num_config:
+                                nrnp_str = '，'.join(nrnp)
+                                DetailResult.objects.create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str)
+                except NetworkXError as nxe:
+                    print(nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    continue
+        # 处理重复的长单链
+        lsc_original = DetailResult.objects.filter(ring_name=rns).values_list('lsc_num', 'lsc_ne').order_by('-lsc_num')
+        print ('=======lsc_original=======')
+        print (lsc_original)
+        for i in range(0, len(lsc_original)-1):
+            for j in range(i+1, len(lsc_original)):
+                big = lsc_original[i]
+                print('=======big=======')
+                print (big)
+                big_ne_list = str(big[1]).split('，')
+                print('=======big_ne_list=======')
+                print(big_ne_list)
+                lessbig = lsc_original[j]
+                lessbig_ne_list = str(lessbig[1]).split('，')
+                if set(big_ne_list).issuperset(set(lessbig_ne_list)):
+                    if DetailResult.objects.filter(ring_name=rns).filter(lsc_num=lessbig[0]).filter(lsc_ne=lessbig[1]):
+                        DetailResult.objects.filter(ring_name=rns).filter(lsc_num=lessbig[0]).filter(lsc_ne=lessbig[1]).delete()
+
+        # --------------------计算双归率-------------------
+        # 定义单归网元列表
+        single_accsess_ne = []
+        # 计算单归
+        for cnl in converge_ne_list:
+            for nrnl in no_ring_ne_list:
+                try:
+                    if nx.all_simple_paths(g, source=cnl, target=nrnl):
+                        for nrnp in nx.all_simple_paths(g, source=cnl, target=nrnl):
+                            if len(set(nrnp) & set(ring_ne_list + converge_ne_list)) == 1:
+                                for c in range(0, len(nrnp)):
+                                    if nrnp[c] not in single_accsess_ne:
+                                        single_accsess_ne.append(nrnp[c])
+                except NetworkXError as nxe:
+                    print(nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    continue
+        double_accsess_ne = list(set(access_ne_list) - (set(single_accsess_ne) - set(converge_ne_list)))
+        # 将该环双归率写入数据库DR数据表中
+        try:
+            DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne)) / float(len(access_ne_list)))
+        except ZeroDivisionError:
+            print('ZeroDivisionError')
+            DetailResult.objects.get_or_create(ring_name=rns, msg='ZeroDivisionError')
+            continue
+
+        total_double_ne_num.append(len(double_accsess_ne))
+
+        # --------------------计算超大汇聚节点-------------------
+        for a in range(0, len(converge_ne_list)):
+            single_single_ne = []
+            for b in range(0, len(no_ring_ne_list)):
+                try:
+                    if nx.all_simple_paths(g, source=converge_ne_list[a], target=no_ring_ne_list[b]):
+                        for ph in nx.all_simple_paths(g, source=converge_ne_list[a], target=no_ring_ne_list[b]):
+                            if len(set(ph) & set(ring_ne_list + converge_ne_list)) == 1:
+                                for p in range(1, len(ph)):
+                                    if ph[p] not in single_single_ne:
+                                        single_single_ne.append(ph[p])
+                except NetworkXError as nxe:
+                    print(nxe.message)
+                    DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
+                    continue
+            point = len(single_single_ne) + float(len(double_accsess_ne)) / float(len(converge_ne_list))
+            if point >= big_converge_node_point_config:
+                DetailResult.objects.create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
+
+    ring_rate = float(sum(total_ring_access_ne_num)) / float(sum(total_access_ne_num))
+    double_rate = float(sum(total_double_ne_num)) / float(sum(total_access_ne_num))
+    Result.objects.create(total_arr=ring_rate, total_dr=double_rate)
+
+    # [(id, u''),(id, u''),....]
+    arplist = DetailResult.objects.values_list('id', 'arp')
+    for al in arplist:
+        weightlist = []
+        allist = str(al[1]).split('，')
+        for x in range(0, len(allist) - 1):
+            if FiberRelationship.objects.filter(source=allist[x]).filter(target=allist[x + 1]):
+                v = FiberRelationship.objects.filter(source=allist[x]).filter(target=allist[x + 1]).values_list(
+                    'edge_weight', flat=True)
+                weightlist.append(v)
+            elif FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]):
+                v = FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]).values_list(
+                    'edge_weight', flat=True)
+                weightlist.append(v)
+        print(weightlist)
+
+        if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
+            if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
+                for wln in range(1, len(weightlist)):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
+                            weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                        for wlnl in range(wln + 1, len(weightlist)):
+                            if str(weightlist[wlnl]) == str(weightlist[0]) and DetailResult.objects.filter(id=al[0]):
+                                DetailResult.objects.filter(id=al[0]).delete()
+            elif str(weightlist[0]) == "[u'1']" and DetailResult.objects.filter(id=al[0]):
+                for wln in range(1, len(weightlist)):
+                    if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
+                            weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                        for wln1 in range(wln + 1, len(weightlist)):
+                            if str(weightlist[wln1]) != str(weightlist[wln]) and wln1 < len(
+                                    weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
+                                for wln2 in range(wln1 + 1, len(weightlist)):
+                                    if str(weightlist[wln2]) != str(weightlist[wln1]) and DetailResult.objects.filter(
+                                            id=al[0]):
+                                        DetailResult.objects.filter(id=al[0]).delete()
     return render_to_response('success.html')

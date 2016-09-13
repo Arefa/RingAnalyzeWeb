@@ -23,5 +23,5 @@ urlpatterns = [
     url(r'^handleexcel/', views.handle_excel),
     url(r'^produce/', views.produce_ring_fiber),
     url(r'^import/', views.import_xlsx_data),
-    url(r'^main/', views.main_handle),
+    url(r'^main/', views.another_main),
 ]
