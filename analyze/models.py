@@ -44,13 +44,14 @@ class DetailResult(models.Model):
     arr = models.CharField(max_length=100)
     arr_ne = models.TextField(max_length=1000)
     dr = models.CharField(max_length=100)
+    dr_ne = models.TextField(max_length=1000)
     arp = models.TextField(max_length=1000)
     msg = models.CharField(max_length=500)
 
     def __str__(self):
-        return "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (
+        return "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (
             self.ring_name, self.ne_num, self.bar_ne, self.cne_point, self.bcne_cne, self.lsc_num, self.lsc_ne,
-            self.arr, self.arr_ne, self.dr, self.arp, self.msg)
+            self.arr, self.arr_ne, self.dr, self.dr_ne, self.arp, self.msg)
 
 
 class RingTable(models.Model):

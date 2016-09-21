@@ -882,9 +882,10 @@ def another_main(request):
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
         double_accsess_ne = list(set(access_ne_list) - (set(single_accsess_ne) - set(converge_ne_list)))
+        double_str = '，'.join(double_accsess_ne)
         # 将该环双归率写入数据库DR数据表中
         try:
-            DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne)) / float(len(access_ne_list)))
+            DetailResult.objects.create(ring_name=rns, dr=float(len(double_accsess_ne)) / float(len(access_ne_list)), dr_ne=double_str)
         except ZeroDivisionError:
             print('ZeroDivisionError')
             DetailResult.objects.get_or_create(ring_name=rns, msg='ZeroDivisionError')
@@ -1014,41 +1015,22 @@ def another_main(request):
 
 
 def testa(request):
-    # 生成成环表
-    rt_ring = set(DetailResult.objects.values_list('ring_name', flat=True))
-    for rr in rt_ring:
-        rt = DetailResult.objects.filter(ring_name=rr).exclude(arp='').values_list('arp', flat=True)
-        slavenbr = len(rt)-1
-        for r in range(0, len(rt)):
-            weightnewlist = []
-            point = 0
-            rlist = str(rt[r]).split('，')
-            for p in range(0, len(rlist) - 1):
-                if FiberRelationship.objects.filter(source=rlist[p]).filter(target=rlist[p + 1]):
-                    q = FiberRelationship.objects.filter(source=rlist[p]).filter(target=rlist[p + 1]).values_list(
-                        'edge_weight', flat=True)
-                    weightnewlist.append(q)
-                elif FiberRelationship.objects.filter(source=rlist[p + 1]).filter(target=rlist[p]):
-                    q = FiberRelationship.objects.filter(source=rlist[p + 1]).filter(target=rlist[p]).values_list(
-                        'edge_weight', flat=True)
-                    weightnewlist.append(q)
-            for wnl in weightnewlist:
-                if str(wnl) == "[u'1000']":
-                    point = 1
-            if point == 0:
-                if (len(rlist)-2) >= 12:
-                    RingTable.objects.create(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist)-2, is_big_ring='是')
-                else:
-                    RingTable.objects.create(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                               is_big_ring='否')
-            else:
-                if (len(rlist)-2) >= 12:
-                    rrstr = str(rr) + '-从环' + str(slavenbr)
-                    slavenbr -= 1
-                    RingTable.objects.create(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2, is_big_ring='是')
-                else:
-                    rrstr = str(rr) + '-从环' + str(slavenbr)
-                    slavenbr -= 1
-                    RingTable.objects.create(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                             is_big_ring='否')
+    # 生成网元表
+    nt = NetworkElement.objects.values_list('ring_region', 'ne_name')
+    rne = DetailResult.objects.exclude(arr_ne='').values_list('arr_ne', flat=True)
+    dne = DetailResult.objects.exclude(dr_ne='').values_list('dr_ne', flat=True)
+    is_ring_or_not = '否'
+    is_double_arrive_or_not = '否'
+    for n in nt:
+        for rn in rne:
+            rnlist = str(rn).split('，')
+            if n[1] in rnlist:
+                is_ring_or_not = '是'
+                break
+        for dn in dne:
+            dnlist = str(dn).split('，')
+            if n[1] in dnlist:
+                is_double_arrive_or_not = '是'
+                break
+        NeTable.objects.create(region=n[0], ne_name=n[1], is_ring=is_ring_or_not, is_double_arrive=is_double_arrive_or_not)
     return render_to_response('success.html')
