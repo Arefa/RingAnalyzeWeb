@@ -86,7 +86,8 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nbnet',
+        # 'NAME': 'nbnet',
+        'NAME': 'nbtest',
         'USER': 'root',
         'PASSWORD': 'cqu000000',
         'HOST': '123.206.207.71',
