@@ -18,6 +18,11 @@ from django.conf.urls import url
 from analyze import views
 
 urlpatterns = [
+    url(r'^$', views.index, name='index'),
+    url(r'^login/$', views.user_login, name='login'),
+    url(r'^logout/$', views.user_logout, name='logout'),
+    url(r'^upload/$', views.upload, name='upload'),
     url(r'^produce/', views.produce_result),
-    url(r'^import/', views.import_csv),
+    # url(r'^import/', views.import_csv),
+
 ]

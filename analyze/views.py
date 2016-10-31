@@ -2,19 +2,79 @@
 from __future__ import print_function
 from __future__ import print_function
 from __future__ import print_function
+
+import os
+
 import networkx as nx
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect, HttpResponse
 from networkx import NetworkXError
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, render
 from .models import NetworkElement, FiberRelationship, ConvergeNE, Result, DetailResult, LongSingleTable, NeTable, \
     CneTable, RingTable
 import sys
 import csv
 
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 
+def index(request):
+    return render(request, 'analyze/index.html')
+
+
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(username=username, password=password)
+        if user:
+            if user.is_active:
+                login(request, user)
+                return HttpResponseRedirect('/analyze/')
+            else:
+                return HttpResponse("Your account is disabled.")
+        else:
+            print("Invalid login details: {0}, {1}".format(username, password))
+            return HttpResponse("Invalid login details supplied.")
+    else:
+        return render(request, 'analyze/login.html', {})
+
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return HttpResponseRedirect('/analyze/')
+
+
+@login_required
+def upload(request):
+    if request.method == "POST":
+        neinfo = request.FILES.get("neinfo", None)  # 获取上传的文件，如果没有文件，则默认为None
+        ne2ne = request.FILES.get("ne2ne", None)  # 获取上传的文件，如果没有文件，则默认为None
+        cneinfo = request.FILES.get("cneinfo", None)  # 获取上传的文件，如果没有文件，则默认为None
+        if not neinfo and ne2ne and cneinfo:
+            return HttpResponse("no files for upload!")
+        destination_neinfo = open(os.path.join("E:\\upload", neinfo.name), 'wb+')  # 打开特定的文件进行二进制的写操作
+        destination_ne2ne = open(os.path.join("E:\\upload", ne2ne.name), 'wb+')  # 打开特定的文件进行二进制的写操作
+        destination_cneinfo = open(os.path.join("E:\\upload", cneinfo.name), 'wb+')  # 打开特定的文件进行二进制的写操作
+        for chunk in neinfo.chunks():  # 分块写入文件
+            destination_neinfo.write(chunk)
+        destination_neinfo.close()
+        for chunk in ne2ne.chunks():  # 分块写入文件
+            destination_ne2ne.write(chunk)
+        destination_ne2ne.close()
+        for chunk in cneinfo.chunks():  # 分块写入文件
+            destination_cneinfo.write(chunk)
+        destination_cneinfo.close()
+        print(u"成功上传数据源！")
+        return render_to_response('success.html')
+
+
 # 导入csv文件，需要提前对csv文件进行编码转换，用文本打开csv文件，转换为utf-8编码
+@login_required
 def import_csv(request):
     # 导入网元信息表中的普通网元到数据库
     with open("./static/neinfou.csv", "r") as neinfo_csvfile:
@@ -27,6 +87,7 @@ def import_csv(request):
                 if nelist[nelist_range][1] in access_ne_type:
                     neinfo_list.append(NetworkElement(ne_name=nelist[nelist_range][0], ne_type=nelist[nelist_range][1], ring_name=nelist[nelist_range][9], ring_region=(nelist[nelist_range][9].decode('utf-8'))[0:2]))
             NetworkElement.objects.bulk_create(neinfo_list)
+            print("成功导入网元信息表！")
         else:
             print(u'网元信息表读取有误！')
 
@@ -39,6 +100,7 @@ def import_csv(request):
             for cnelist_range in range(1, len(cnelist)):
                 cneinfo_list.append(ConvergeNE(cne_name=cnelist[cnelist_range][1], cne_type='390000', ring_name=cnelist[cnelist_range][2], ring_region=cnelist[cnelist_range][0]))
             ConvergeNE.objects.bulk_create(cneinfo_list)
+            print("成功导入汇聚网元信息表！")
         else:
             print(u'网元信息表读取有误！')
 
@@ -56,12 +118,60 @@ def import_csv(request):
                         FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7],
                                           edge_weight=1000))
             FiberRelationship.objects.bulk_create(ne2ne_list)
+            print("成功导入纤缆连接关系表！")
         else:
             print(u'网元信息表读取有误！')
     return render_to_response('success.html')
 
 
+@login_required
 def produce_result(request):
+    # 导入网元信息表中的普通网元到数据库
+    with open("E:\\upload\\neinfo.csv", "r") as neinfo_csvfile:
+        neinfo_read = csv.reader(neinfo_csvfile)
+        access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
+        neinfo_list = []
+        nelist = [ne_row for ne_row in neinfo_read]
+        if nelist[7][0] == u'网元名称' and nelist[7][1] == u'网元类型' and nelist[7][9] == u'所属子网':
+            for nelist_range in range(8, len(nelist)):
+                if nelist[nelist_range][1] in access_ne_type:
+                    neinfo_list.append(NetworkElement(ne_name=nelist[nelist_range][0], ne_type=nelist[nelist_range][1], ring_name=nelist[nelist_range][9], ring_region=(nelist[nelist_range][9].decode('utf-8'))[0:2]))
+            NetworkElement.objects.bulk_create(neinfo_list)
+            print(u"成功导入网元信息表！")
+        else:
+            print(u'网元信息表读取有误！')
+
+    # 导入汇聚网元信息表到数据库
+    with open("E:\\upload\\cneinfo.csv", "r") as cneinfo_csvfile:
+        cneinfo_read = csv.reader(cneinfo_csvfile)
+        cneinfo_list = []
+        cnelist = [cne_row for cne_row in cneinfo_read]
+        if cnelist[0][1] == u'网元名称' and cnelist[0][2] == u'所属子网':
+            for cnelist_range in range(1, len(cnelist)):
+                cneinfo_list.append(ConvergeNE(cne_name=cnelist[cnelist_range][1], cne_type='390000', ring_name=cnelist[cnelist_range][2], ring_region=cnelist[cnelist_range][0]))
+            ConvergeNE.objects.bulk_create(cneinfo_list)
+            print(u"成功导入汇聚网元信息表！")
+        else:
+            print(u'网元信息表读取有误！')
+
+    # 导入纤缆连接关系表到数据库
+    with open("E:\\upload\\ne2ne.csv", "r") as ne2ne_csvfile:
+        ne2ne_read = csv.reader(ne2ne_csvfile)
+        ne2ne_list = []
+        ne2nelist = [ne2ne_row for ne2ne_row in ne2ne_read]
+        if ne2nelist[7][5] == u'源网元' and ne2nelist[7][7] == u'宿网元' and ne2nelist[7][16] == u'备注':
+            for ne2nelist_range in range(8, len(ne2nelist)):
+                if ne2nelist[ne2nelist_range][16] == '1':
+                    ne2ne_list.append(FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7], edge_weight=1))
+                elif ne2nelist[ne2nelist_range][16] != '1' and ne2nelist[ne2nelist_range][16] != '0':
+                    ne2ne_list.append(
+                        FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7],
+                                          edge_weight=1000))
+            FiberRelationship.objects.bulk_create(ne2ne_list)
+            print(u"成功导入纤缆连接关系表！")
+        else:
+            print(u'网元信息表读取有误！')
+
     # 以下为计算参数配置-----------------------------
     # 超大接入环接入网元阈值
     big_access_num_config = 12
@@ -77,8 +187,6 @@ def produce_result(request):
     total_access_ne_num = []
     # 所有接入环成环接入网元数
     total_ring_access_ne_num = []
-    # # 所有单归网元表
-    # total_single_ne_num = []
     # 所有双归网元表
     total_double_ne_num = []
     # 遍历ring_name_set，到NetworkElement和ConvergeNE两张表中搜索ring_name_set[]得到某一环下所有网元
@@ -173,8 +281,8 @@ def produce_result(request):
         # 处理重复的长单链
         lsc_original = DetailResult.objects.filter(ring_name=rns).values_list('id', 'lsc_num', 'lsc_ne').order_by(
             '-lsc_num')
-        print('=======lsc_original=======')
-        print(lsc_original)
+        #print('=======lsc_original=======')
+        #print(lsc_original)
         for i in range(0, len(lsc_original) - 1):
             for j in range(i + 1, len(lsc_original)):
                 big = lsc_original[i]
@@ -253,7 +361,7 @@ def produce_result(request):
                 v = FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]).values_list(
                     'edge_weight', flat=True)
                 weightlist.append(v)
-        print(weightlist)
+        #print(weightlist)
 
         if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
             if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
@@ -352,5 +460,15 @@ def produce_result(request):
                 break
         NeTable.objects.create(region=n[0], ne_name=n[1], is_ring=is_ring_or_not,
                                is_double_arrive=is_double_arrive_or_not)
-
+    print(u"分析完成！")
     return render_to_response('success.html')
+
+
+@login_required
+def download(request):
+    pass
+
+
+@login_required
+def clean(request):
+    pass

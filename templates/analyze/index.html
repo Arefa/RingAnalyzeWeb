@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎使用传输网络安全评估分析工具</title>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <h1><b>传输网络安全评估分析工具</b></h1>
+        ==========================================================================<br />
+        <i>@宁波移动网络部传动中心</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>****</b><a href="/analyze/logout/">注销系统</a><b>****</b><br />
+        ==========================================================================<br />
+        <h2>第一步上传数据：<br /></h2>
+        <form enctype="multipart/form-data" action="/analyze/upload/" method="post">
+            {% csrf_token %}
+            <p>-选择数据源-现网网元信息->->-><input type="file" name="neinfo" /></p>
+            <p>-选择数据源-纤缆连接关系->->-><input type="file" name="ne2ne" /></p>
+            <p>-选择数据源-汇聚网元信息->->-><input type="file" name="cneinfo" /></p>
+            <input type="submit" value="执行上传" /><br />
+        </form>
+        <h2>第二步评估分析：</h2>
+        <a href="/analyze/config/">配置参数</a> | <a href="/analyze/produce/">执行评估</a><br />
+        <h2>第三步下载结果：</h2>
+        <a href="/analyze/download/">执行下载</a> | 此版本包含:网元表、汇聚网元表、成环网元表、长单链表
+        <h2>第四步清理评估分析过程数据：</h2>
+        <a href="/analyze/clean/">执行清理</a>
+    {% else %}
+        <h1><b>传输网络安全评估分析工具</b></h1>
+        ==========================================================================<br />
+        <i>@宁波移动网络部传动中心</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>****</b><a href="/analyze/login/">登录系统</a> | <a href="/admin">后台管理</a><b>****</b><br />
+        ==========================================================================<br />
+    {% endif %}
+</body>
+</html>
