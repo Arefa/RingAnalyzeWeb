@@ -15,7 +15,6 @@ from .models import NetworkElement, FiberRelationship, ConvergeNE, Result, Detai
     CneTable, RingTable
 from openpyxl import Workbook
 
-
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -100,7 +99,9 @@ def produce_result(request):
         if nelist[7][0] == u'网元名称' and nelist[7][1] == u'网元类型' and nelist[7][9] == u'所属子网':
             for nelist_range in range(8, len(nelist)):
                 if nelist[nelist_range][1] in access_ne_type:
-                    neinfo_list.append(NetworkElement(ne_name=nelist[nelist_range][0], ne_type=nelist[nelist_range][1], ring_name=nelist[nelist_range][9], ring_region=(nelist[nelist_range][9].decode('utf-8'))[0:2]))
+                    neinfo_list.append(NetworkElement(ne_name=nelist[nelist_range][0], ne_type=nelist[nelist_range][1],
+                                                      ring_name=nelist[nelist_range][9],
+                                                      ring_region=(nelist[nelist_range][9].decode('utf-8'))[0:2]))
             NetworkElement.objects.bulk_create(neinfo_list)
             print(u"成功导入网元信息表！")
         else:
@@ -113,7 +114,9 @@ def produce_result(request):
         cnelist = [cne_row for cne_row in cneinfo_read]
         if cnelist[0][1] == u'网元名称' and cnelist[0][2] == u'所属子网':
             for cnelist_range in range(1, len(cnelist)):
-                cneinfo_list.append(ConvergeNE(cne_name=cnelist[cnelist_range][1], cne_type='390000', ring_name=cnelist[cnelist_range][2], ring_region=cnelist[cnelist_range][0]))
+                cneinfo_list.append(ConvergeNE(cne_name=cnelist[cnelist_range][1], cne_type='390000',
+                                               ring_name=cnelist[cnelist_range][2],
+                                               ring_region=cnelist[cnelist_range][0]))
             ConvergeNE.objects.bulk_create(cneinfo_list)
             print(u"成功导入汇聚网元信息表！")
         else:
@@ -127,7 +130,9 @@ def produce_result(request):
         if ne2nelist[7][5] == u'源网元' and ne2nelist[7][7] == u'宿网元' and ne2nelist[7][16] == u'备注':
             for ne2nelist_range in range(8, len(ne2nelist)):
                 if ne2nelist[ne2nelist_range][16] == '1':
-                    ne2ne_list.append(FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7], edge_weight=1))
+                    ne2ne_list.append(
+                        FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7],
+                                          edge_weight=1))
                 elif ne2nelist[ne2nelist_range][16] != '1' and ne2nelist[ne2nelist_range][16] != '0':
                     ne2ne_list.append(
                         FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7],
@@ -246,8 +251,8 @@ def produce_result(request):
         # 处理重复的长单链
         lsc_original = DetailResult.objects.filter(ring_name=rns).values_list('id', 'lsc_num', 'lsc_ne').order_by(
             '-lsc_num')
-        #print('=======lsc_original=======')
-        #print(lsc_original)
+        # print('=======lsc_original=======')
+        # print(lsc_original)
         for i in range(0, len(lsc_original) - 1):
             for j in range(i + 1, len(lsc_original)):
                 big = lsc_original[i]
@@ -326,7 +331,7 @@ def produce_result(request):
                 v = FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]).values_list(
                     'edge_weight', flat=True)
                 weightlist.append(v)
-        #print(weightlist)
+        # print(weightlist)
 
         if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
             if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
@@ -348,13 +353,16 @@ def produce_result(request):
                                             id=al[0]):
                                         DetailResult.objects.filter(id=al[0]).delete()
     # 生成长单链表
+    lstlist = []
     lst = DetailResult.objects.values_list('id', 'ring_name', 'lsc_num', 'lsc_ne')
     for l in lst:
         if len(l[2]) != 0:
             lsc_region = l[1][0:2]
-            LongSingleTable.objects.create(region=lsc_region, longsinglepath=l[3], nbr=l[2])
+            lstlist.append(LongSingleTable(region=lsc_region, longsinglepath=l[3], nbr=l[2]))
+    LongSingleTable.objects.bulk_create(lstlist)
 
     # 生成汇聚表
+    cnetablelist = []
     cneset = list(set(ConvergeNE.objects.values_list('cne_name', flat=True)))
     for cs in cneset:
         cspointlist = DetailResult.objects.filter(bcne_cne=cs).values_list('cne_point', flat=True)
@@ -362,12 +370,14 @@ def produce_result(request):
         cspoint = sum(cspointlistnbr)
         ct_region = ConvergeNE.objects.filter(cne_name=cs).values_list('ring_region', flat=True)[0]
         if cspoint >= 80:
-            CneTable.objects.create(region=ct_region, cne_name=cs, cne_nenbr=cspoint, is_big_cne='是')
+            cnetablelist.append(CneTable(region=ct_region, cne_name=cs, cne_nenbr=cspoint, is_big_cne='是'))
         else:
-            CneTable.objects.create(region=ct_region, cne_name=cs, cne_nenbr=cspoint, is_big_cne='否')
+            cnetablelist.append(CneTable(region=ct_region, cne_name=cs, cne_nenbr=cspoint, is_big_cne='否'))
+    CneTable.objects.bulk_create(cnetablelist)
 
     # 生成成环表
     rt_ring = set(DetailResult.objects.values_list('ring_name', flat=True))
+    ringtablelist = []
     for rr in rt_ring:
         rt = DetailResult.objects.filter(ring_name=rr).exclude(arp='').values_list('arp', flat=True)
         slavenbr = len(rt) - 1
@@ -389,27 +399,29 @@ def produce_result(request):
                     point = 1
             if point == 0:
                 if (len(rlist) - 2) >= 12:
-                    RingTable.objects.create(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                             is_big_ring='是')
+                    ringtablelist.append(RingTable(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist) - 2,
+                                                   is_big_ring='是'))
                 else:
-                    RingTable.objects.create(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                             is_big_ring='否')
+                    ringtablelist.append(RingTable(region=rr[0:2], ring_name=rr, arp=rt[r], arp_nbr=len(rlist) - 2,
+                                                   is_big_ring='否'))
             else:
                 if (len(rlist) - 2) >= 12:
                     rrstr = str(rr) + '-从环' + str(slavenbr)
                     slavenbr -= 1
-                    RingTable.objects.create(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                             is_big_ring='是')
+                    ringtablelist.append(RingTable(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2,
+                                                   is_big_ring='是'))
                 else:
                     rrstr = str(rr) + '-从环' + str(slavenbr)
                     slavenbr -= 1
-                    RingTable.objects.create(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2,
-                                             is_big_ring='否')
+                    ringtablelist.append(RingTable(region=rr[0:2], ring_name=rrstr, arp=rt[r], arp_nbr=len(rlist) - 2,
+                                                   is_big_ring='否'))
+    RingTable.objects.bulk_create(ringtablelist)
 
     # 生成网元表
     nt = NetworkElement.objects.values_list('ring_region', 'ne_name')
     rne = DetailResult.objects.exclude(arr_ne='').values_list('arr_ne', flat=True)
     dne = DetailResult.objects.exclude(dr_ne='').values_list('dr_ne', flat=True)
+    netablelist = []
     is_ring_or_not = '否'
     is_double_arrive_or_not = '否'
     for n in nt:
@@ -423,8 +435,9 @@ def produce_result(request):
             if n[1] in dnlist:
                 is_double_arrive_or_not = '是'
                 break
-        NeTable.objects.create(region=n[0], ne_name=n[1], is_ring=is_ring_or_not,
-                               is_double_arrive=is_double_arrive_or_not)
+        netablelist.append(
+            NeTable(region=n[0], ne_name=n[1], is_ring=is_ring_or_not, is_double_arrive=is_double_arrive_or_not))
+    NeTable.objects.bulk_create(netablelist)
     print(u"分析完成！")
     return render_to_response('success.html')
 
