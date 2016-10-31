@@ -80,24 +80,13 @@ WSGI_APPLICATION = 'RingAnalyzeWeb.wsgi.application'
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': 'nbnet',
         'NAME': 'nbtest',
         'USER': 'root',
         'PASSWORD': 'cqu000000',
         'HOST': '123.206.207.71',
         'PORT': '3306',
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'nbnet',
-        # 'USER': 'postgres',
-        # 'PASSWORD': 'cqu000000',
-        # 'HOST': '123.206.207.71',
-        # 'PORT': '5432',
     }
 }
 

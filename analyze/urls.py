@@ -23,6 +23,5 @@ urlpatterns = [
     url(r'^logout/$', views.user_logout, name='logout'),
     url(r'^upload/$', views.upload, name='upload'),
     url(r'^produce/', views.produce_result),
-    # url(r'^import/', views.import_csv),
-
+    url(r'^download/', views.download),
 ]

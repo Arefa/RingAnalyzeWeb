@@ -2,9 +2,9 @@
 from __future__ import print_function
 from __future__ import print_function
 from __future__ import print_function
-
 import os
-
+import sys
+import csv
 import networkx as nx
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -13,8 +13,7 @@ from networkx import NetworkXError
 from django.shortcuts import render_to_response, render
 from .models import NetworkElement, FiberRelationship, ConvergeNE, Result, DetailResult, LongSingleTable, NeTable, \
     CneTable, RingTable
-import sys
-import csv
+from openpyxl import Workbook
 
 
 reload(sys)
@@ -51,6 +50,12 @@ def user_logout(request):
 
 @login_required
 def upload(request):
+    if os.path.exists('E:\\upload\\neinfo.csv'):
+        os.remove('E:\\upload\\neinfo.csv')
+    if os.path.exists('E:\\upload\\cneinfo.csv'):
+        os.remove('E:\\upload\\cneinfo.csv')
+    if os.path.exists('E:\\upload\\ne2ne.csv'):
+        os.remove('E:\\upload\\ne2ne.csv')
     if request.method == "POST":
         neinfo = request.FILES.get("neinfo", None)  # 获取上传的文件，如果没有文件，则默认为None
         ne2ne = request.FILES.get("ne2ne", None)  # 获取上传的文件，如果没有文件，则默认为None
@@ -73,59 +78,19 @@ def upload(request):
         return render_to_response('success.html')
 
 
-# 导入csv文件，需要提前对csv文件进行编码转换，用文本打开csv文件，转换为utf-8编码
-@login_required
-def import_csv(request):
-    # 导入网元信息表中的普通网元到数据库
-    with open("./static/neinfou.csv", "r") as neinfo_csvfile:
-        neinfo_read = csv.reader(neinfo_csvfile)
-        access_ne_type = ('OptiX PTN 910', 'OptiX PTN 950', 'OptiX PTN 960', 'OptiX PTN 1900')
-        neinfo_list = []
-        nelist = [ne_row for ne_row in neinfo_read]
-        if nelist[7][0] == u'网元名称' and nelist[7][1] == u'网元类型' and nelist[7][9] == u'所属子网':
-            for nelist_range in range(8, len(nelist)):
-                if nelist[nelist_range][1] in access_ne_type:
-                    neinfo_list.append(NetworkElement(ne_name=nelist[nelist_range][0], ne_type=nelist[nelist_range][1], ring_name=nelist[nelist_range][9], ring_region=(nelist[nelist_range][9].decode('utf-8'))[0:2]))
-            NetworkElement.objects.bulk_create(neinfo_list)
-            print("成功导入网元信息表！")
-        else:
-            print(u'网元信息表读取有误！')
-
-    # 导入汇聚网元信息表到数据库
-    with open("./static/cneinfou.csv", "r") as cneinfo_csvfile:
-        cneinfo_read = csv.reader(cneinfo_csvfile)
-        cneinfo_list = []
-        cnelist = [cne_row for cne_row in cneinfo_read]
-        if cnelist[0][1] == u'网元名称' and cnelist[0][2] == u'所属子网':
-            for cnelist_range in range(1, len(cnelist)):
-                cneinfo_list.append(ConvergeNE(cne_name=cnelist[cnelist_range][1], cne_type='390000', ring_name=cnelist[cnelist_range][2], ring_region=cnelist[cnelist_range][0]))
-            ConvergeNE.objects.bulk_create(cneinfo_list)
-            print("成功导入汇聚网元信息表！")
-        else:
-            print(u'网元信息表读取有误！')
-
-    # 导入纤缆连接关系表到数据库
-    with open("./static/ne2neu.csv", "r") as ne2ne_csvfile:
-        ne2ne_read = csv.reader(ne2ne_csvfile)
-        ne2ne_list = []
-        ne2nelist = [ne2ne_row for ne2ne_row in ne2ne_read]
-        if ne2nelist[7][5] == u'源网元' and ne2nelist[7][7] == u'宿网元' and ne2nelist[7][16] == u'备注':
-            for ne2nelist_range in range(8, len(ne2nelist)):
-                if ne2nelist[ne2nelist_range][16] == '1':
-                    ne2ne_list.append(FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7], edge_weight=1))
-                elif ne2nelist[ne2nelist_range][16] != '1' and ne2nelist[ne2nelist_range][16] != '0':
-                    ne2ne_list.append(
-                        FiberRelationship(source=ne2nelist[ne2nelist_range][5], target=ne2nelist[ne2nelist_range][7],
-                                          edge_weight=1000))
-            FiberRelationship.objects.bulk_create(ne2ne_list)
-            print("成功导入纤缆连接关系表！")
-        else:
-            print(u'网元信息表读取有误！')
-    return render_to_response('success.html')
-
-
 @login_required
 def produce_result(request):
+    NetworkElement.objects.all().delete()
+    FiberRelationship.objects.all().delete()
+    ConvergeNE.objects.all().delete()
+    Result.objects.all().delete()
+    DetailResult.objects.all().delete()
+    FiberRelationship.objects.all().delete()
+    LongSingleTable.objects.all().delete()
+    NeTable.objects.all().delete()
+    CneTable.objects.all().delete()
+    RingTable.objects.all().delete()
+    print(u"清理数据完成！")
     # 导入网元信息表中的普通网元到数据库
     with open("E:\\upload\\neinfo.csv", "r") as neinfo_csvfile:
         neinfo_read = csv.reader(neinfo_csvfile)
@@ -466,9 +431,35 @@ def produce_result(request):
 
 @login_required
 def download(request):
-    pass
+    netable = NeTable.objects.values_list('region', 'ne_name', 'is_ring', 'is_double_arrive')
+    cnetable = CneTable.objects.values_list('region', 'cne_name', 'cne_nenbr', 'is_big_cne')
+    ringtable = RingTable.objects.values_list('region', 'ring_name', 'arp', 'arp_nbr', 'is_big_ring')
+    longsingletable = LongSingleTable.objects.values_list('region', 'longsinglepath', 'nbr')
+    wb_netable = Workbook(write_only=True)
+    ws_netable = wb_netable.create_sheet()
+    ws_netable.append(['区域', '网元名称', '是否成环', '是否双归'])
+    for ne in netable:
+        ws_netable.append(ne)
+    wb_netable.save('E:\\upload\\netable.xlsx')
 
+    wb_cnetable = Workbook(write_only=True)
+    ws_cnetable = wb_cnetable.create_sheet()
+    ws_cnetable.append(['区域', '汇聚网元名称', '汇聚网元分值', '是否超大汇聚节点'])
+    for cne in cnetable:
+        ws_cnetable.append(cne)
+    wb_cnetable.save('E:\\upload\\cnetable.xlsx')
 
-@login_required
-def clean(request):
-    pass
+    wb_ringtable = Workbook(write_only=True)
+    ws_ringtable = wb_ringtable.create_sheet()
+    ws_ringtable.append(['区域', '环名称', '成环路经', '成环网元数', '是否超大接入环'])
+    for r in ringtable:
+        ws_ringtable.append(r)
+    wb_ringtable.save('E:\\upload\\ringtable.xlsx')
+
+    wb_longsingletable = Workbook(write_only=True)
+    ws_longsingletable = wb_longsingletable.create_sheet()
+    ws_longsingletable.append(['区域', '长单链路径', '长单链网元数'])
+    for l in longsingletable:
+        ws_longsingletable.append(l)
+    wb_longsingletable.save('E:\\upload\\longsingletable.xlsx')
+    return render_to_response('success.html')
