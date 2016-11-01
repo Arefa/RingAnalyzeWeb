@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>欢迎使用传输网络安全评估分析工具</title>
+    <title>首页 | 欢迎使用传输网络安全评估分析工具</title>
 </head>
 <body>
     {% if user.is_authenticated %}
@@ -10,6 +10,7 @@
         ==========================================================================<br />
         <i>@宁波移动网络部传动中心</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>****</b><a href="/analyze/logout/">注销系统</a><b>****</b><br />
         ==========================================================================<br />
+        <b><a href="/analyze/readme/">使用前必读！！！</a></b><br />
         <h2>第一步上传数据：<br /></h2>
         <form enctype="multipart/form-data" action="/analyze/upload/" method="post">
             {% csrf_token %}

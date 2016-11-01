@@ -41,6 +41,10 @@ def user_login(request):
         return render(request, 'analyze/login.html', {})
 
 
+def readme(request):
+    return render_to_response('help.html')
+
+
 @login_required
 def user_logout(request):
     logout(request)

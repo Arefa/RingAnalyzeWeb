@@ -24,5 +24,5 @@ urlpatterns = [
     url(r'^upload/$', views.upload, name='upload'),
     url(r'^produce/', views.produce_result),
     url(r'^download/', views.download),
-    url(r'^test/', views.test),
+    url(r'^readme/', views.readme),
 ]
