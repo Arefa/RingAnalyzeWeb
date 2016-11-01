@@ -186,6 +186,8 @@ def produce_result(request):
         ring_cne = []
         # --------------------计算成环率和超大接入环-------------------
         # 找出接入环中任意两个汇聚网元之间的所有路径
+        arrlist = []
+        barlist = []
         for a in range(0, len(converge_ne_list) - 1):
             for b in range(a + 1, len(converge_ne_list)):
                 source_ne = converge_ne_list[a]
@@ -203,10 +205,10 @@ def produce_result(request):
                             if len(set(pth) & set(converge_ne_list)) == 2:
                                 if len(pth) > 2:
                                     pth_str = '，'.join(pth)
-                                    DetailResult.objects.create(ring_name=rns, arp=pth_str)
+                                    arrlist.append(DetailResult(ring_name=rns, arp=pth_str))
                                     # 判断超大接入环并写入数据库BAR数据表中
                                     if (len(pth) - 2) >= big_access_num_config:
-                                        DetailResult.objects.create(ring_name=rns, ne_num=len(pth) - 2, bar_ne=pth_str)
+                                        barlist.append(DetailResult(ring_name=rns, ne_num=len(pth) - 2, bar_ne=pth_str))
                                     # 将该路径中的网元加入到该环成环网元列表中，剔除首尾的汇聚网元
                                     for c in range(1, len(pth) - 1):
                                         if pth[c] not in path_list:
@@ -215,6 +217,8 @@ def produce_result(request):
                     print(nxe.message)
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
+        DetailResult.objects.bulk_create(arrlist)
+        DetailResult.objects.bulk_create(barlist)
         # 获取每一个环成环网元列表
         ring_ne_list = path_list
         ring_str = '，'.join(ring_ne_list)
@@ -235,6 +239,7 @@ def produce_result(request):
         # 成环接入汇聚网元列表
         new_ring = ring_cne + ring_ne_list
         # 计算长单链
+        lscoriginallist = []
         for rnl in new_ring:
             for nrnl in no_ring_ne_list:
                 try:
@@ -243,11 +248,12 @@ def produce_result(request):
                             if len(set(nrnp) & set(new_ring)) == 1 and len(
                                     nrnp) >= long_single_chain_num_config:
                                 nrnp_str = '，'.join(nrnp)
-                                DetailResult.objects.create(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str)
+                                lscoriginallist.append(DetailResult(ring_name=rns, lsc_num=len(nrnp), lsc_ne=nrnp_str))
                 except NetworkXError as nxe:
                     print(nxe.message)
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
+        DetailResult.objects.bulk_create(lscoriginallist)
         # 处理重复的长单链
         lsc_original = DetailResult.objects.filter(ring_name=rns).values_list('id', 'lsc_num', 'lsc_ne').order_by(
             '-lsc_num')
@@ -295,6 +301,7 @@ def produce_result(request):
         total_double_ne_num.append(len(double_accsess_ne))
 
         # --------------------计算超大汇聚节点-------------------
+        calbcnelist = []
         for a in range(0, len(converge_ne_list)):
             single_single_ne = []
             for b in range(0, len(no_ring_ne_list)):
@@ -310,8 +317,9 @@ def produce_result(request):
                     DetailResult.objects.get_or_create(ring_name=rns, msg=nxe.message)
                     continue
             point = len(single_single_ne) + float(len(double_accsess_ne)) / float(len(converge_ne_list))
-            if point >= big_converge_node_point_config:
-                DetailResult.objects.create(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a])
+            if point >= 0:
+                calbcnelist.append(DetailResult(ring_name=rns, cne_point=point, bcne_cne=converge_ne_list[a]))
+        DetailResult.objects.bulk_create(calbcnelist)
 
     ring_rate = float(sum(total_ring_access_ne_num)) / float(sum(total_access_ne_num))
     double_rate = float(sum(total_double_ne_num)) / float(sum(total_access_ne_num))
@@ -331,17 +339,16 @@ def produce_result(request):
                 v = FiberRelationship.objects.filter(source=allist[x + 1]).filter(target=allist[x]).values_list(
                     'edge_weight', flat=True)
                 weightlist.append(v)
-        # print(weightlist)
 
         if len(weightlist) > 0 and DetailResult.objects.filter(id=al[0]):
-            if str(weightlist[0]) == "[u'1000']" and DetailResult.objects.filter(id=al[0]):
+            if str(weightlist[0]) == u"<QuerySet [u'1000']>" and DetailResult.objects.filter(id=al[0]):
                 for wln in range(1, len(weightlist)):
                     if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
                             weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
                         for wlnl in range(wln + 1, len(weightlist)):
                             if str(weightlist[wlnl]) == str(weightlist[0]) and DetailResult.objects.filter(id=al[0]):
                                 DetailResult.objects.filter(id=al[0]).delete()
-            elif str(weightlist[0]) == "[u'1']" and DetailResult.objects.filter(id=al[0]):
+            elif str(weightlist[0]) == u"<QuerySet [u'1']>" and DetailResult.objects.filter(id=al[0]):
                 for wln in range(1, len(weightlist)):
                     if str(weightlist[wln]) != str(weightlist[0]) and wln < len(
                             weightlist) - 1 and DetailResult.objects.filter(id=al[0]):
@@ -454,7 +461,8 @@ def produce_result(request):
 def download(request):
     netable = NeTable.objects.values_list('region', 'ne_name', 'is_ring', 'is_double_arrive')
     cnetable = CneTable.objects.values_list('region', 'cne_name', 'cne_nenbr', 'is_big_cne')
-    ringtable = RingTable.objects.values_list('region', 'ring_name', 'arp', 'arp_nbr', 'is_big_ring')
+    ringtable = RingTable.objects.values_list('region', 'ring_name', 'arp', 'arp_nbr', 'is_big_ring').order_by(
+        'ring_name')
     longsingletable = LongSingleTable.objects.values_list('region', 'longsinglepath', 'nbr')
     wb_netable = Workbook(write_only=True)
     ws_netable = wb_netable.create_sheet()
