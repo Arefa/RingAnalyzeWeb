@@ -1,22 +1,19 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <!-- Is anyone getting tired of repeatedly entering the header over and over?? -->
-        <title>登录 | 欢迎使用传输网络安全评估分析工具</title>
-    </head>
+{% extends 'base.html' %}
 
-    <body>
-        <h1>登录传输网络安全评估分析工具</h1>
+{% load staticfiles %}
 
-        <form id="login_form" method="post" action="/analyze/login/">
+{% block title %}登录系统{% endblock %}
+
+{% block body_block %}
+    <div class="page-header">
+        <form id="login_form" method="post" action="/analyze/login/" class="form-signin">
+            <h2 class="form-signin-heading">请登录</h2>
             {% csrf_token %}
-            Username: <input type="text" name="username" value="" size="50" />
-            <br />
-            Password: <input type="password" name="password" value="" size="50" />
-            <br />
-
-            <input type="submit" value="submit" />
+            <label for="inputEmail" class="sr-only">用户名</label>
+            <input type="text" name="username" class="form-control" placeholder="用户名" required autofocus>
+            <label for="inputPassword" class="sr-only">密码</label>
+            <input type="password" name="password" class="form-control" placeholder="密码" required>
+            <button class="btn btn-lg btn-primary btn-block" type="submit">登录</button>
         </form>
-
-    </body>
-</html>
+    </div>
+{% endblock %}

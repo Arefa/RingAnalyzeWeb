@@ -20,7 +20,22 @@ sys.setdefaultencoding('utf8')
 
 
 def index(request):
-    return render(request, 'analyze/index.html')
+    return render(request, 'analyze/home.html')
+
+
+@login_required
+def uploadhtml(request):
+    return render(request, 'analyze/uploadhtml.html')
+
+
+@login_required
+def producehtml(request):
+    return render(request, 'analyze/producehtml.html')
+
+
+@login_required
+def downloadhtml(request):
+    return render(request, 'analyze/downloadhtml.html')
 
 
 def user_login(request):

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% load staticfiles %}
+
+{% block title %}上传数据{% endblock %}
+
+{% block body_block %}
+    <div class="page-header">
+        <form enctype="multipart/form-data" action="/analyze/upload/" method="post" class="form">
+            <h2 class="text-center form-signin-heading">开始选择数据源</h2><br />
+            {% csrf_token %}
+            <h2 class="text-center"><span class="label label-success"><span class="badge">Step 1</span>&nbsp;选择现网网元信息</span></h2>
+            <input class="center-block" type="file" name="neinfo"/>
+            <h2 class="text-center"><span class="label label-success"><span class="badge">Step 2</span>&nbsp;选择纤缆连接关系</span></h2>
+            <input class="center-block" type="file" name="ne2ne"/>
+            <h2 class="text-center"><span class="label label-success"><span class="badge">Step 3</span>&nbsp;选择汇聚网元信息</span></h2>
+            <input class="center-block" type="file" name="cneinfo"/><br />
+            <input type="submit" class="center-block text-center btn btn-lg btn-success" value="执行上传"/><br/>
+        </form>
+    </div>
+{% endblock %}

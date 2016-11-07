@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% load staticfiles %}
+
+{% block title %}下载结果{% endblock %}
+
+{% block body_block %}
+    <div class="page-header">
+        <br />
+        <br />
+        <br />
+        <button class="center-block btn btn-lg btn-success"><a class="text-center btn btn-lg btn-default" href="/analyze/download/">执行下载</a></button><br /><br/>
+        <p class="text-center">
+            <span class="label label-default">此版本分析结果包含： 网元表、汇聚网元表、成环网元表、长单链表</span>
+        </p>
+
+    </div>
+{% endblock %}
